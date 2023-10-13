@@ -18,7 +18,7 @@ std::vector<std::string> splitAndSort(const std::string& input) {
     std::sregex_token_iterator end;
     for (; iter != end; ++iter) {
         std::string token = *iter;
- //       token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
+        //token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
         result.push_back(token);
     }
     std::sort(result.begin(), result.end());
@@ -37,7 +37,7 @@ bool areVectorsEqual(const std::vector<std::string>& vec1, const std::vector<std
 }
 int main()
 {
-    std::ifstream file("C:/Users/kimjh/OneDrive - 한양대학교/토플/2.csv");
+    std::ifstream file("../voca/6.csv");
     if (!file.is_open()) {
         std::cout << "File not found.\n";
         return 1;
@@ -139,7 +139,7 @@ int main()
     for (const auto& word : final_wrong_words) {
         std::cout << word << "\n";
     }
-    std::ofstream output_file("C:/Users/kimjh/OneDrive - 한양대학교/토플/2_wrong.csv");
+    std::ofstream output_file("../voca/6_wrong.csv");
     for (const auto& wrong_word : final_wrong_words) {
         auto found = std::find_if(words_meanings.begin(), words_meanings.end(), [&wrong_word](const auto& wm) {
             return wm.first == wrong_word;
