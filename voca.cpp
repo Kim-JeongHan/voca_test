@@ -35,9 +35,13 @@ bool areVectorsEqual(const std::vector<std::string>& vec1, const std::vector<std
     }
     return true;
 }
-int main()
+int main(int argc, char* argv[])
 {
-    std::ifstream file("../voca/6.csv");
+    std::string filename;
+    filename = argv[1];
+    filename = "./words/"+ filename + ".csv";
+    std::ifstream file(filename);
+
     if (!file.is_open()) {
         std::cout << "File not found.\n";
         return 1;
