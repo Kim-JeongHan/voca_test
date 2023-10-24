@@ -1,4 +1,4 @@
-﻿#include <iostream>
+#include <iostream>
 #include <fstream>
 #include <string>
 #include <vector>
@@ -17,7 +17,8 @@
 class TestVoca
 {
 private:
-    std::string filename_;
+    std::string filepath_,filename_;
+    int file_number_;
     std::vector<std::pair<std::string, std::string>> words_meanings_;
     std::vector<int> indices_;
     int score_ = 0;
@@ -38,7 +39,7 @@ private:
                 words_meanings_.emplace_back(line.substr(0, pos), line.substr(pos + 1));
             }
         }
-        
+
         file.close();
     }
 
@@ -58,6 +59,27 @@ private:
             output_file << words[i].first << ", " << words[i].second << std::endl;
         }
         output_file.close();
+    }
+
+    void save_(const std::vector<std::pair<std::string, std::string>> &  words,
+               const bool & save_next_file)
+    {
+        if(save_next_file)
+        {
+            std::ofstream output_file(filepath_+ std::to_string(file_number_+1) + ".csv");
+            for (int i = 0; i < words.size(); ++i) {
+                output_file << words[i].first << ", " << words[i].second << std::endl;
+            }
+            output_file.close();
+        }
+        else
+        {
+            std::ofstream output_file(filename_+ "_wrong.csv");
+            for (int i = 0; i < words.size(); ++i) {
+                output_file << words[i].first << ", " << words[i].second << std::endl;
+            }
+            output_file.close();
+        }
     }
 
     bool ContainsComma_(const std::string& str) {
@@ -80,8 +102,8 @@ private:
     }
 
     bool AreVectorsEqual_(
-        const std::vector<std::string>& vec1, 
-        const std::vector<std::string>& vec2) 
+        const std::vector<std::string>& vec1,
+        const std::vector<std::string>& vec2)
     {
         if (vec1.size() != vec2.size()) {
             return false;
@@ -94,10 +116,35 @@ private:
         return true;
     }
 
-public:
-    TestVoca(const std::string& filename)
-    : filename_(filename)
+    bool mode_()
     {
+        std::cout << "practice mode is 0" << std::endl;
+        std::cout << "test mode is 1" << std::endl;
+        std::cout << "which mode do you want to choose? (0 or 1)" << std::endl;
+
+        std::string mode;
+        std::getline(std::cin, mode);
+        if(mode == "0")
+        {
+            return false;
+        }
+        else if(mode == "1")
+        {
+            return true;
+        }
+        else
+        {
+            std::cout << "please enter 0 or 1" << std::endl;
+            mode_();
+
+        }
+        return false;
+    }
+public:
+    TestVoca(const std::string& filepath, const int &number)
+    : filepath_(filepath), file_number_(number)
+    {
+        filename_ = filepath_ + std::to_string(file_number_);
         ReadFile_();
         runTest();
     }
@@ -105,14 +152,23 @@ public:
     {
         shuffle_(words_meanings_.size());
         std::vector<std::pair<std::string, std::string>> wrong_words, final_wrong_words;
-        Test(words_meanings_, wrong_words);
-        printScore(words_meanings_.size());
-
-        shuffle_(wrong_words.size());
-        Test(wrong_words, final_wrong_words);
-        printScore(wrong_words.size());
-        printWrongVoca(wrong_words);
-        save_(final_wrong_words);
+        if(!mode_())
+        {
+            Test(words_meanings_, wrong_words);
+            printScore(words_meanings_.size());
+            shuffle_(wrong_words.size());
+            Test(wrong_words, final_wrong_words);
+            printScore(wrong_words.size());
+            printWrongVoca(final_wrong_words);
+            save_(final_wrong_words);
+        }
+        else
+        {
+            Test(words_meanings_, wrong_words);
+            printScore(words_meanings_.size());
+            printWrongVoca(wrong_words);
+            save_(wrong_words, true);
+        }
 
     }
     void Test(std::vector<std::pair<std::string, std::string>> & words_meanings,
@@ -145,7 +201,7 @@ public:
                     wrong_words.push_back(words_meanings[i]);
                     std::cout << "Incorrect. The correct answer is: " << words_meanings[i].second << "\n";
                 }
-            
+
                 else {
                     score_++;
                 }
@@ -159,7 +215,7 @@ public:
                     score_++;
                 }
             }
-        
+
         }
     }
 
@@ -176,17 +232,19 @@ public:
         }
     }
 
-};  
+};
 
 
 
 int main(int argc, char* argv[])
 {
-    std::string filename;
-    filename = argv[1];
-    filename = "./words/"+ filename;
- 
-    TestVoca test(filename);
+    std::string fliename, filepath;
+    int number;
+    fliename = argv[1];
+    number = std::stoi(fliename);
+    filepath = "../words/";
+
+    TestVoca test(filepath, number);
 
 
     return 0;
