@@ -174,6 +174,7 @@ public:
     void Test(std::vector<std::pair<std::string, std::string>> & words_meanings,
               std::vector<std::pair<std::string, std::string>> & wrong_words)
     {
+        score_ = 0;
         for (int i : indices_) {
             std::cout << "What is the meaning of " << words_meanings[i].first << "? ";
             std::string answer;
