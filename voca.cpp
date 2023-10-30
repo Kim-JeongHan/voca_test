@@ -94,7 +94,6 @@ private:
         std::sregex_token_iterator end;
         for (; iter != end; ++iter) {
             std::string token = *iter;
-            //token.erase(std::remove_if(token.begin(), token.end(), ::isspace), token.end());
             result.push_back(token);
         }
         std::sort(result.begin(), result.end());
@@ -114,6 +113,18 @@ private:
             }
         }
         return true;
+    }
+
+    void rewrite_wrong_words_(std::pair<std::string, std::string> & wrong_words)
+    {
+        std::cout << "---Rewrite the wrong words---" << std::endl;
+        std::string answer;
+        std::getline(std::cin, answer);
+        std::string result = wrong_words.first + " " + wrong_words.second;
+        ContainsComma_(answer);
+        ContainsComma_(result);
+        if (answer != result)
+            rewrite_wrong_words_(wrong_words);
     }
 
     bool mode_()
@@ -201,6 +212,7 @@ public:
                 if (!AreVectorsEqual_(answers, responses)) {
                     wrong_words.push_back(words_meanings[i]);
                     std::cout << "Incorrect. The correct answer is: " << words_meanings[i].second << "\n";
+                    rewrite_wrong_words_(wrong_words.back());
                 }
 
                 else {
@@ -211,6 +223,7 @@ public:
                 if (answer != second_result) {
                     wrong_words.push_back(words_meanings[i]);
                     std::cout << "Incorrect. The correct answer is: " << words_meanings[i].second << "\n";
+                    rewrite_wrong_words_(wrong_words.back());
                 }
                 else {
                     score_++;
