@@ -5,12 +5,20 @@
 #include <vector>
 
 TestVoca::TestVoca(const std::string& filepath, const int &number)
-: filepath_(filepath), file_number_(number)
+: TestVoca(filepath, std::vector<std::string>{std::to_string(number)})
 {
-    filename_ = filepath_ + std::to_string(file_number_);
+}
+
+TestVoca::TestVoca(const std::string& filepath, const std::vector<std::string> &filename)
+: filepath_(filepath), file_number_(filename.size())
+{
+    for (auto & i : filename) {
+        voca_file_.push_back(filepath_ + i);
+    }
     ReadFile_();
     runTest();
 }
+
 
 void TestVoca::runTest()
 {
@@ -18,25 +26,29 @@ void TestVoca::runTest()
     std::vector<std::pair<std::string, std::string>> wrong_words, final_wrong_words;
     if(!mode_())
     {
-        Test(words_meanings_, wrong_words);
-        printScore(words_meanings_.size());
+        Test_(words_meanings_, wrong_words);
+        printScore_(words_meanings_.size());
         shuffle_(wrong_words.size());
-        Test(wrong_words, final_wrong_words);
-        printScore(wrong_words.size());
-        printWrongVoca(final_wrong_words);
-        save_(final_wrong_words);
+        Test_(wrong_words, final_wrong_words);
+        printScore_(wrong_words.size());
+        printWrongVoca_(final_wrong_words);
+        save_(final_wrong_words, false);
     }
     else
     {
-        Test(words_meanings_, wrong_words);
-        printScore(words_meanings_.size());
-        printWrongVoca(wrong_words);
+        if(words_meanings_.size() > test_size_)
+        {
+            words_meanings_.resize(test_size_);
+        }
+        Test_(words_meanings_, wrong_words);
+        printScore_(words_meanings_.size());
+        printWrongVoca_(wrong_words);
         save_(wrong_words, true);
     }
 
 }
 
-void TestVoca::Test(std::vector<std::pair<std::string, std::string>> & words_meanings,
+void TestVoca::Test_(std::vector<std::pair<std::string, std::string>> & words_meanings,
             std::vector<std::pair<std::string, std::string>> & wrong_words)
 {
     score_ = 0;
@@ -87,12 +99,12 @@ void TestVoca::Test(std::vector<std::pair<std::string, std::string>> & words_mea
     }
 }
 
-void TestVoca::printScore(const long int total_score)
+void TestVoca::printScore_(const long int total_score)
 {
     std::cout << "Score: " << score_ << " / " << total_score << std::endl;
 }
 
-void TestVoca::printWrongVoca(std::vector<std::pair<std::string, std::string>> & wrong_words)
+void TestVoca::printWrongVoca_(std::vector<std::pair<std::string, std::string>> & wrong_words)
 {
     std::cout << "The following words were answered incorrectly: \n";
     for (const auto& word : wrong_words) {
@@ -102,23 +114,77 @@ void TestVoca::printWrongVoca(std::vector<std::pair<std::string, std::string>> &
 
 
 
+void TestVoca::save_(const std::vector<std::pair<std::string, std::string>> &  words,
+                    const bool & save_next_file)
+{
+    
+    if(voca_file_.size() > 1)
+    {
+        voca_file_.front() = voca_file_.front() + "~" + voca_file_.back().back(); 
+    }
+    if(save_next_file)
+    {
+        std::ofstream output_file(voca_file_[0] + "_test.csv", std::ios_base::app); 
+        for (int i = 0; i < words.size(); ++i) {
+            output_file << words[i].first << "," << words[i].second << std::endl;
+        }
+        output_file.close();
+    }
+    else
+    {
+        std::ofstream output_file(voca_file_[0] + "_wrong.csv", std::ios_base::app);
+        for (int i = 0; i < words.size(); ++i) {
+            output_file << words[i].first << "," << words[i].second << std::endl;
+        }
+        output_file.close();
+    }
+}
+
+bool TestVoca::mode_()
+{
+    std::cout << "practice mode is 0" << std::endl;
+    std::cout << "test mode is 1" << std::endl;
+    std::cout << "which mode do you want to choose? (0 or 1)" << std::endl;
+
+    std::string mode;
+    std::getline(std::cin, mode);
+    if(mode == "0")
+    {
+        return false;
+    }
+    else if(mode == "1")
+    {
+        return true;
+    }
+    else
+    {
+        std::cout << "please enter 0 or 1" << std::endl;
+        mode_();
+
+    }
+    return false;
+}
+
 
 void TestVoca::ReadFile_()
 {
-    std::ifstream file(filename_+ ".csv");
-    if (!file.is_open()) {
-        std::cout << "File not found.\n";
-        return;
-    }
-    std::string line;
-    while (std::getline(file, line)) {
-        size_t pos = line.find(",");
-        if (pos != std::string::npos) {
-            words_meanings_.emplace_back(line.substr(0, pos), line.substr(pos + 1));
+    for(auto & i : voca_file_)
+    {
+        std::ifstream file(i+ ".csv");
+        if (!file.is_open()) {
+            std::cout << i + " not found.\n";
+            return;
         }
-    }
+        std::string line;
+        while (std::getline(file, line)) {
+            size_t pos = line.find(",");
+            if (pos != std::string::npos) {
+                words_meanings_.emplace_back(line.substr(0, pos), line.substr(pos + 1));
+            }
+        }
 
-    file.close();
+        file.close();
+    }
 }
 
 void TestVoca::shuffle_(const long int words_size)
@@ -128,37 +194,6 @@ void TestVoca::shuffle_(const long int words_size)
     std::random_device rd;
     std::default_random_engine eng(rd());
     std::shuffle(indices_.begin(), indices_.end(), eng);
-}
-
-
-void TestVoca::save_(const std::vector<std::pair<std::string, std::string>> &  words)
-{
-    std::ofstream output_file(filename_+ "_wrong.csv");
-    for (int i = 0; i < words.size(); ++i) {
-        output_file << words[i].first << ", " << words[i].second << std::endl;
-    }
-    output_file.close();
-}
-
-void TestVoca::save_(const std::vector<std::pair<std::string, std::string>> &  words,
-                    const bool & save_next_file)
-{
-    if(save_next_file)
-    {
-        std::ofstream output_file(filepath_+ std::to_string(file_number_+1) + ".csv");
-        for (int i = 0; i < words.size(); ++i) {
-            output_file << words[i].first << ", " << words[i].second << std::endl;
-        }
-        output_file.close();
-    }
-    else
-    {
-        std::ofstream output_file(filename_+ "_wrong.csv");
-        for (int i = 0; i < words.size(); ++i) {
-            output_file << words[i].first << ", " << words[i].second << std::endl;
-        }
-        output_file.close();
-    }
 }
 
 bool TestVoca::ContainsComma_(const std::string& str) {
@@ -206,27 +241,3 @@ void TestVoca::rewrite_wrong_words_(std::pair<std::string, std::string> & wrong_
         rewrite_wrong_words_(wrong_words);
 }
 
-bool TestVoca::mode_()
-{
-    std::cout << "practice mode is 0" << std::endl;
-    std::cout << "test mode is 1" << std::endl;
-    std::cout << "which mode do you want to choose? (0 or 1)" << std::endl;
-
-    std::string mode;
-    std::getline(std::cin, mode);
-    if(mode == "0")
-    {
-        return false;
-    }
-    else if(mode == "1")
-    {
-        return true;
-    }
-    else
-    {
-        std::cout << "please enter 0 or 1" << std::endl;
-        mode_();
-
-    }
-    return false;
-}
