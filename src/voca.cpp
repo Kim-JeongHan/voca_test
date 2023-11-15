@@ -36,12 +36,9 @@ void TestVoca::runTest()
     }
     else
     {
-        if(words_meanings_.size() > test_size_)
-        {
-            words_meanings_.resize(test_size_);
-        }
+        indices_.resize(test_size_);
         Test_(words_meanings_, wrong_words);
-        printScore_(words_meanings_.size());
+        printScore_(indices_.size());
         printWrongVoca_(wrong_words);
         save_(wrong_words, true);
     }
@@ -117,14 +114,14 @@ void TestVoca::printWrongVoca_(std::vector<std::pair<std::string, std::string>> 
 void TestVoca::save_(const std::vector<std::pair<std::string, std::string>> &  words,
                     const bool & save_next_file)
 {
-    
+
     if(voca_file_.size() > 1)
     {
-        voca_file_.front() = voca_file_.front() + "~" + voca_file_.back().back(); 
+        voca_file_.front() = voca_file_.front() + "~" + voca_file_.back().back();
     }
     if(save_next_file)
     {
-        std::ofstream output_file(voca_file_[0] + "_test.csv", std::ios_base::app); 
+        std::ofstream output_file(voca_file_[0] + "_test.csv", std::ios_base::app);
         for (int i = 0; i < words.size(); ++i) {
             output_file << words[i].first << "," << words[i].second << std::endl;
         }
@@ -240,4 +237,3 @@ void TestVoca::rewrite_wrong_words_(std::pair<std::string, std::string> & wrong_
     if (answer != result)
         rewrite_wrong_words_(wrong_words);
 }
-
