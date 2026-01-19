@@ -8,13 +8,25 @@ namespace voca {
 bool VocaTestEngine::isCorrect(const std::string& answer, const std::string& correct) const
 {
     std::string normalized_answer = removeWhitespace_(answer);
-    std::string stripped_correct = stripQuotes_(correct);
+    std::string stripped_correct = stripQuotes(correct);
     std::string normalized_correct = removeWhitespace_(stripped_correct);
 
     if (containsComma_(normalized_correct)) {
         std::vector<std::string> answers = splitAndSort_(normalized_answer);
         std::vector<std::string> responses = splitAndSort_(normalized_correct);
-        return answers == responses;
+
+        if (answers == responses) {
+            return true;
+        }
+
+        for (const auto& ans : answers) {
+            for (const auto& resp : responses) {
+                if (ans == resp) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     return normalized_answer == normalized_correct;
@@ -26,7 +38,7 @@ std::string VocaTestEngine::removeWhitespace_(const std::string& s) const
     return std::regex_replace(s, pattern, "");
 }
 
-std::string VocaTestEngine::stripQuotes_(const std::string& s) const
+std::string VocaTestEngine::stripQuotes(const std::string& s) const
 {
     if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
         return s.substr(1, s.size() - 2);

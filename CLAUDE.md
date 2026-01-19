@@ -14,9 +14,6 @@ C++ 단어 학습 프로그램. CSV 단어장을 로드하여 퀴즈/테스트�
 ## Operational Commands
 
 ```bash
-# Build
-cmake -S . -B build && cmake --build build
-
 # Build (script)
 ./build.sh
 

@@ -80,15 +80,27 @@ void TestVoca::testOnce_(const std::vector<std::pair<std::string, std::string>>&
         }
 
         int wrong_count = result.wrongCount(word, correct);
-        if (wrong_count > 0) {
-            std::cout << makeHint_(correct, wrong_count) << "\n";
-        }
+        int hint_shown = 0;
 
-        std::cout << "What is the meaning of " << word << "? ";
-        std::string answer;
-        std::getline(std::cin, answer);
+        while (true) {
+            std::cout << "What is the meaning of " << word << "? ";
+            std::string answer;
+            std::getline(std::cin, answer);
 
-        if (!engine_.isCorrect(answer, correct)) {
+            if (answer == "hint" || answer == "h") {
+                ++hint_shown;
+                int hint_level = std::min(wrong_count + hint_shown, 4);
+                std::cout << makeHint_(correct, hint_level) << "\n";
+                continue;
+            }
+
+            if (engine_.isCorrect(answer, correct)) {
+                if (!from_retry) {
+                    result.markCorrect();
+                }
+                break;
+            }
+
             if (from_retry) {
                 result.recordWrongAttempt({word, correct});
             } else {
@@ -97,18 +109,14 @@ void TestVoca::testOnce_(const std::vector<std::pair<std::string, std::string>>&
 
             int next_count = result.wrongCount(word, correct);
             if (next_count >= 4) {
-                std::cout << "Incorrect. The correct answer is: " << correct
-                          << " (type it again)\n";
+                std::cout << "Incorrect. The correct answer is: "
+                          << engine_.stripQuotes(correct) << " (type it again)\n";
             } else {
-                std::cout << "Incorrect.\n";
+                std::cout << "Incorrect. (type 'hint' for a hint)\n";
             }
 
             retry_queue.push_front({word, correct});
-            continue;
-        }
-
-        if (!from_retry) {
-            result.markCorrect();
+            break;
         }
     }
 }

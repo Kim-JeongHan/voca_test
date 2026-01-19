@@ -19,11 +19,25 @@ bool VocaLoader::loadCSV(const std::string& base_path,
     while (std::getline(file, line)) {
         std::size_t pos = line.find(",");
         if (pos != std::string::npos) {
-            out.emplace_back(line.substr(0, pos), line.substr(pos + 1));
+            std::string word = line.substr(0, pos);
+            std::string correct = line.substr(pos + 1);
+
+            word = stripQuotes_(word);
+            correct = stripQuotes_(correct);
+
+            out.emplace_back(word, correct);
         }
     }
 
     return true;
+}
+
+std::string VocaLoader::stripQuotes_(const std::string& s) const
+{
+    if (s.size() >= 2 && s.front() == '"' && s.back() == '"') {
+        return s.substr(1, s.size() - 2);
+    }
+    return s;
 }
 
 } // namespace voca
