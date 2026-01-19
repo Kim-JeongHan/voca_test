@@ -3,18 +3,18 @@
 
 const CACHE_NAME = 'voca-trainer-v2';
 const STATIC_ASSETS = [
-    '/',
-    '/index.html',
-    '/css/style.css',
-    '/js/storage.js',
-    '/js/tts.js',
-    '/js/app.js',
-    '/manifest.json'
+    './',
+    './index.html',
+    './css/style.css',
+    './js/storage.js',
+    './js/tts.js',
+    './js/app.js',
+    './manifest.json'
 ];
 
 const WASM_ASSETS = [
-    '/wasm/voca_core.js',
-    '/wasm/voca_core.wasm'
+    './wasm/voca_core.js',
+    './wasm/voca_core.wasm'
 ];
 
 // Install: cache static assets
@@ -94,7 +94,7 @@ self.addEventListener('fetch', (event) => {
             .catch(() => {
                 // Network failed and no cache, return fallback
                 if (request.mode === 'navigate') {
-                    return caches.match('/index.html');
+                    return caches.match('./index.html');
                 }
                 return new Response('Offline', { status: 503 });
             })
