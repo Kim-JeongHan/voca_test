@@ -6,6 +6,8 @@ const VocaApp = (() => {
     let currentDeck = null;
     let lastWrongCSV = '';
     let focusMode = false;
+    let hintCount = 0;
+    let currentQuestion = null;
 
     // Available decks (built-in)
     const BUILTIN_DECKS = [
@@ -51,6 +53,9 @@ const VocaApp = (() => {
         elements.questionText = document.getElementById('question-text');
         elements.hintText = document.getElementById('hint-text');
         elements.answerInput = document.getElementById('answer-input');
+        elements.hintBtn = document.getElementById('hint-btn');
+        elements.submitBtn = document.getElementById('submit-btn');
+        elements.quitBtn = document.getElementById('quit-btn');
         elements.feedbackArea = document.getElementById('feedback-area');
         elements.feedbackIcon = document.getElementById('feedback-icon');
         elements.feedbackText = document.getElementById('feedback-text');
@@ -78,6 +83,9 @@ const VocaApp = (() => {
         // Session screen
         elements.backBtn.addEventListener('click', confirmQuit);
         elements.answerInput.addEventListener('keydown', handleAnswerKeydown);
+        elements.hintBtn.addEventListener('click', handleHintClick);
+        elements.submitBtn.addEventListener('click', handleSubmitClick);
+        elements.quitBtn.addEventListener('click', saveAndQuit);
 
         // Summary screen
         elements.exportWrongBtn.addEventListener('click', exportWrongList);
@@ -383,20 +391,38 @@ const VocaApp = (() => {
             return;
         }
 
+        // Reset hint state for new question
+        hintCount = 0;
+        currentQuestion = {
+            word: prompt.question_text,
+            correct: findCorrectAnswer(prompt.question_text),
+            attempt: prompt.attempt
+        };
+
         // Update UI
         elements.questionText.textContent = prompt.question_text;
         elements.hintText.textContent = prompt.hint || '';
-        elements.attemptInfo.textContent = `Attempt: ${prompt.attempt}`;
+        updateAttemptInfo();
 
         const progress = prompt.progress;
         elements.progressText.textContent = `${progress.done}/${progress.total}`;
         elements.progressFill.style.width = `${(progress.done / progress.total) * 100}%`;
 
-        // Reset input
+        // Reset input and buttons
         elements.answerInput.value = '';
         elements.answerInput.className = '';
         elements.feedbackArea.className = 'hidden';
+        elements.hintBtn.disabled = false;
+        elements.hintBtn.textContent = 'Hint';
         elements.answerInput.focus();
+    }
+
+    function findCorrectAnswer(word) {
+        if (currentDeck && currentDeck.words) {
+            const found = currentDeck.words.find(w => w.word === word);
+            return found ? found.meaning : '';
+        }
+        return '';
     }
 
     function handleAnswerKeydown(e) {
@@ -406,6 +432,66 @@ const VocaApp = (() => {
         if (!answer) return;
 
         submitAnswer(answer);
+    }
+
+    function handleSubmitClick() {
+        const answer = elements.answerInput.value.trim();
+        if (!answer) return;
+
+        submitAnswer(answer);
+    }
+
+    function handleHintClick() {
+        hintCount++;
+        updateAttemptInfo();
+
+        // Generate hint based on hint count
+        if (currentQuestion) {
+            const correct = currentQuestion.correct || '';
+            const letters = correct.replace(/[\s,]/g, '');
+            let hint = '';
+
+            if (hintCount === 1) {
+                hint = `Hint: ${'_'.repeat(letters.length)} (${letters.length} 글자)`;
+            } else if (hintCount === 2) {
+                hint = `Hint: ${letters[0] || ''}${'_'.repeat(Math.max(0, letters.length - 1))}`;
+            } else if (hintCount === 3) {
+                hint = `Hint: ${letters.substring(0, 2)}${'_'.repeat(Math.max(0, letters.length - 2))}`;
+            } else {
+                hint = `Hint: ${correct} (type it again)`;
+            }
+
+            elements.hintText.textContent = hint;
+
+            // Mark as wrong if hint used twice or more
+            if (hintCount >= 2) {
+                elements.hintBtn.disabled = true;
+                elements.hintBtn.textContent = 'Wrong (2+ hints)';
+            }
+        }
+    }
+
+    function updateAttemptInfo() {
+        const attempt = currentQuestion ? (currentQuestion.attempt || 1) : 1;
+        elements.attemptInfo.textContent = `Attempt: ${attempt} | Hints: ${hintCount}`;
+    }
+
+    async function saveAndQuit() {
+        // Save current session state to storage
+        if (session && currentDeck) {
+            await VocaStorage.saveSessionState({
+                deckName: currentDeck.name,
+                timestamp: Date.now()
+            });
+        }
+
+        if (session && vocaCore.ccall) {
+            vocaCore.ccall('voca_session_destroy', null, ['number'], [session]);
+        }
+        session = null;
+
+        alert('Session saved. You can resume later.');
+        showHome();
     }
 
     async function submitAnswer(answer) {

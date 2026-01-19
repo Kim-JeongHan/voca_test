@@ -340,6 +340,27 @@ footer {
     50% { transform: scale(1.02); }
 }
 
+#action-buttons {
+    display: flex;
+    gap: 12px;
+}
+
+#action-buttons .btn {
+    flex: 1;
+}
+
+.btn-small {
+    padding: 8px 16px;
+    font-size: 0.875rem;
+    min-height: 36px;
+}
+
+footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
 #feedback-area {
     display: flex;
     align-items: center;

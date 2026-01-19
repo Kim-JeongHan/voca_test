@@ -1,10 +1,11 @@
 // IndexedDB wrapper for deck and stats storage
 const VocaStorage = (() => {
     const DB_NAME = 'voca_trainer';
-    const DB_VERSION = 1;
+    const DB_VERSION = 2;
     const DECK_STORE = 'decks';
     const STATS_STORE = 'stats';
     const WRONG_STORE = 'wrong';
+    const SESSION_STORE = 'session';
 
     let db = null;
 
@@ -37,6 +38,11 @@ const VocaStorage = (() => {
                 // Wrong list store: { id, word, meaning, timestamp }
                 if (!database.objectStoreNames.contains(WRONG_STORE)) {
                     database.createObjectStore(WRONG_STORE, { keyPath: 'id', autoIncrement: true });
+                }
+
+                // Session store: { id, deckName, timestamp }
+                if (!database.objectStoreNames.contains(SESSION_STORE)) {
+                    database.createObjectStore(SESSION_STORE, { keyPath: 'id', autoIncrement: true });
                 }
             };
         });
@@ -160,6 +166,43 @@ const VocaStorage = (() => {
         URL.revokeObjectURL(url);
     }
 
+    async function saveSessionState(sessionData) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(SESSION_STORE, 'readwrite');
+            const store = tx.objectStore(SESSION_STORE);
+            store.clear();
+            const request = store.add(sessionData);
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getSessionState() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(SESSION_STORE, 'readonly');
+            const store = tx.objectStore(SESSION_STORE);
+            const request = store.getAll();
+            request.onsuccess = () => {
+                const sessions = request.result;
+                resolve(sessions.length > 0 ? sessions[0] : null);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function clearSessionState() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(SESSION_STORE, 'readwrite');
+            const store = tx.objectStore(SESSION_STORE);
+            const request = store.clear();
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     return {
         init,
         saveDeck,
@@ -167,6 +210,9 @@ const VocaStorage = (() => {
         saveWrongList,
         getWrongList,
         clearWrongList,
+        saveSessionState,
+        getSessionState,
+        clearSessionState,
         parseCSV,
         toCSV,
         downloadFile

@@ -82,7 +82,40 @@ TestVoca (Facade)
     +-- VocaSession     : 세션 상태 관리
 ```
 
+## Web UI (docs/)
+
+PWA 기반 웹 인터페이스. GitHub Pages를 통해 배포됨.
+
+### 구조
+
+```
+docs/
+├── index.html       : 메인 HTML (3개 화면: home, session, summary)
+├── css/style.css    : 스타일시트
+├── js/
+│   ├── app.js       : 메인 애플리케이션 로직
+│   └── storage.js   : IndexedDB 저장소 래퍼
+├── wasm/            : C++ WASM 빌드 출력 (선택적)
+├── words/           : 내장 단어장 CSV 파일
+├── manifest.json    : PWA 매니페스트
+└── sw.js            : 서비스 워커 (오프라인 지원)
+```
+
+### 주요 기능
+
+- **힌트 버튼**: 클릭 시 순차적 힌트 표시 (2회 이상 사용 시 오답 처리)
+- **제출 버튼**: 답안 제출 (Enter 키와 동일)
+- **Save & Quit**: 세션 저장 후 종료
+- **Wrong Only**: 오답만 재학습
+
+### 수정 시 주의
+
+- `app.js` 수정 시 WASM/JS fallback 양쪽 모두 고려
+- `storage.js`의 DB_VERSION 변경 시 onupgradeneeded 핸들러 확인
+- CSS는 모바일 우선 반응형 디자인
+
 ## Context Map
 
 - **[Core Logic (src/)](./src/CLAUDE.md)** — 핵심 비즈니스 로직 수정 시
 - **[Tests (tests/)](./tests/CLAUDE.md)** — 테스트 작성 및 수정 시
+- **[Web UI (docs/)](./docs/)** — 웹 인터페이스 수정 시

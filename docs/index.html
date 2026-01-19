@@ -67,6 +67,10 @@
                 </div>
                 <div id="answer-area">
                     <input type="text" id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <div id="action-buttons">
+                        <button id="hint-btn" class="btn btn-secondary">Hint</button>
+                        <button id="submit-btn" class="btn btn-primary">Submit</button>
+                    </div>
                     <div id="feedback-area" class="hidden">
                         <div id="feedback-icon"></div>
                         <div id="feedback-text"></div>
@@ -74,7 +78,8 @@
                 </div>
             </main>
             <footer>
-                <div id="attempt-info">Attempt: 1</div>
+                <div id="attempt-info">Attempt: 1 | Hints: 0</div>
+                <button id="quit-btn" class="btn btn-secondary btn-small">Save & Quit</button>
             </footer>
         </div>
 
