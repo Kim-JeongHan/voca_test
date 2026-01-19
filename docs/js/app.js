@@ -263,7 +263,35 @@ const VocaApp = (() => {
 
     async function loadDeck() {
         currentDeck = await VocaStorage.getDeck();
+        
+        // Auto-load default deck (Day 1) if no deck is loaded
+        if (!currentDeck) {
+            await loadDefaultDeck();
+            currentDeck = await VocaStorage.getDeck();
+        }
+        
         populateDeckSelect();
+    }
+
+    async function loadDefaultDeck() {
+        const defaultDeck = '1'; // Day 1 as default
+        try {
+            const response = await fetch(`words/${defaultDeck}.csv`);
+            if (!response.ok) {
+                console.warn('Failed to fetch default deck');
+                return;
+            }
+
+            const text = await response.text();
+            const words = VocaStorage.parseCSV(text);
+
+            if (words.length > 0) {
+                await VocaStorage.saveDeck(defaultDeck, words);
+                console.log(`Default deck (Day ${defaultDeck}) loaded automatically`);
+            }
+        } catch (err) {
+            console.error('Failed to load default deck:', err);
+        }
     }
 
     function populateDeckSelect() {
