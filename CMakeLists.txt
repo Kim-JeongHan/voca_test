@@ -17,6 +17,7 @@ add_library(
     ${CMAKE_CURRENT_SOURCE_DIR}/src/voca_engine.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/voca_result.cpp
     ${CMAKE_CURRENT_SOURCE_DIR}/src/voca_saver.cpp
+    ${CMAKE_CURRENT_SOURCE_DIR}/src/voca_session.cpp
 )
 
 enable_testing()
@@ -33,10 +34,14 @@ target_link_libraries(test_result ${PROJECT_NAME}_lib)
 add_executable(test_regression tests/test_regression.cpp)
 target_link_libraries(test_regression ${PROJECT_NAME}_lib)
 
+add_executable(test_session tests/test_session.cpp)
+target_link_libraries(test_session ${PROJECT_NAME}_lib)
+
 add_test(NAME test_engine COMMAND test_engine)
 add_test(NAME test_loader COMMAND test_loader)
 add_test(NAME test_result COMMAND test_result)
 add_test(NAME test_regression COMMAND test_regression)
+add_test(NAME test_session COMMAND test_session)
 
 add_executable(simple src/simple_main.cpp)
 target_link_libraries(simple ${PROJECT_NAME}_lib)
