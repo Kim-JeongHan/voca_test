@@ -11,7 +11,7 @@ void VocaResult::markCorrect()
 void VocaResult::markWrong(const WrongVoca& w)
 {
     ++total_;
-    wrong_.push_back(w);
+    recordWrongAttempt(w);
 }
 
 int VocaResult::score() const
@@ -27,6 +27,29 @@ int VocaResult::total() const
 const std::vector<WrongVoca>& VocaResult::wrongList() const
 {
     return wrong_;
+}
+
+void VocaResult::recordWrongAttempt(const WrongVoca& w)
+{
+    for (auto& item : wrong_) {
+        if (item.word == w.word && item.correct == w.correct) {
+            ++item.wrong_count;
+            return;
+        }
+    }
+
+    WrongVoca item{w.word, w.correct, 1};
+    wrong_.push_back(item);
+}
+
+int VocaResult::wrongCount(const std::string& word, const std::string& correct) const
+{
+    for (const auto& item : wrong_) {
+        if (item.word == word && item.correct == correct) {
+            return item.wrong_count;
+        }
+    }
+    return 0;
 }
 
 void VocaResult::reset()

@@ -30,6 +30,7 @@ int main()
             result.markCorrect();
         } else {
             result.markWrong({item.first, item.second});
+            result.recordWrongAttempt({item.first, item.second});
         }
     }
 
@@ -37,6 +38,7 @@ int main()
     assert(result.score() == 2);
     assert(result.wrongList().size() == 1);
     assert(result.wrongList()[0].word == "banana");
+    assert(result.wrongList()[0].wrong_count == 2);
 
     std::cout << "test_regression passed\n";
     return 0;

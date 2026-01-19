@@ -25,6 +25,7 @@ private:
     bool mode_();
     void shuffle_(std::size_t words_size);
     std::string makeBaseName_() const;
+    std::string makeHint_(const std::string& correct, int wrong_count) const;
 
     std::string filepath_;
     std::vector<std::string> voca_file_;

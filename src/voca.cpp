@@ -1,6 +1,7 @@
 #include "voca_test/voca.hpp"
 
 #include <algorithm>
+#include <deque>
 #include <iostream>
 #include <numeric>
 #include <random>
@@ -40,19 +41,12 @@ void TestVoca::runTest()
         testOnce_(repo_.data(), first_pass);
         printScore_(first_pass.score(), static_cast<int>(repo_.size()));
 
-        std::vector<std::pair<std::string, std::string>> wrong_words;
-        for (const auto& w : first_pass.wrongList()) {
-            wrong_words.emplace_back(w.word, w.correct);
-        }
-
-        shuffle_(wrong_words.size());
-        voca::VocaResult second_pass;
-        testOnce_(wrong_words, second_pass);
-        printScore_(second_pass.score(), static_cast<int>(wrong_words.size()));
-        printWrongVoca_(second_pass.wrongList());
-        saver_.saveWrongCSV(makeBaseName_(), second_pass.wrongList(), 0);
+        printWrongVoca_(first_pass.wrongList());
+        saver_.saveWrongCSV(makeBaseName_(), first_pass.wrongList(), 0);
     } else {
-        indices_.resize(test_size_);
+        if (indices_.size() > static_cast<std::size_t>(test_size_)) {
+            indices_.resize(test_size_);
+        }
         voca::VocaResult result;
         testOnce_(repo_.data(), result);
         printScore_(result.score(), static_cast<int>(indices_.size()));
@@ -65,15 +59,55 @@ void TestVoca::testOnce_(const std::vector<std::pair<std::string, std::string>>&
                          voca::VocaResult& result)
 {
     result.reset();
-    for (int i : indices_) {
-        std::cout << "What is the meaning of " << words[i].first << "? ";
+    std::deque<int> main_queue(indices_.begin(), indices_.end());
+    std::deque<voca::WrongVoca> retry_queue;
+
+    while (!main_queue.empty() || !retry_queue.empty()) {
+        bool from_retry = !retry_queue.empty();
+        std::string word;
+        std::string correct;
+
+        if (from_retry) {
+            const auto current = retry_queue.front();
+            retry_queue.pop_front();
+            word = current.word;
+            correct = current.correct;
+        } else {
+            int idx = main_queue.front();
+            main_queue.pop_front();
+            word = words[idx].first;
+            correct = words[idx].second;
+        }
+
+        int wrong_count = result.wrongCount(word, correct);
+        if (wrong_count > 0) {
+            std::cout << makeHint_(correct, wrong_count) << "\n";
+        }
+
+        std::cout << "What is the meaning of " << word << "? ";
         std::string answer;
         std::getline(std::cin, answer);
 
-        if (!engine_.isCorrect(answer, words[i].second)) {
-            result.markWrong({words[i].first, words[i].second});
-            std::cout << "Incorrect. The correct answer is: " << words[i].second << "\n";
-        } else {
+        if (!engine_.isCorrect(answer, correct)) {
+            if (from_retry) {
+                result.recordWrongAttempt({word, correct});
+            } else {
+                result.markWrong({word, correct});
+            }
+
+            int next_count = result.wrongCount(word, correct);
+            if (next_count >= 4) {
+                std::cout << "Incorrect. The correct answer is: " << correct
+                          << " (type it again)\n";
+            } else {
+                std::cout << "Incorrect.\n";
+            }
+
+            retry_queue.push_front({word, correct});
+            continue;
+        }
+
+        if (!from_retry) {
             result.markCorrect();
         }
     }
@@ -131,4 +165,74 @@ std::string TestVoca::makeBaseName_() const
     }
 
     return voca_file_.front();
+}
+
+std::string TestVoca::makeHint_(const std::string& correct, int wrong_count) const
+{
+    std::string hint = correct;
+    if (hint.size() >= 2 && hint.front() == '"' && hint.back() == '"') {
+        hint = hint.substr(1, hint.size() - 2);
+    } else if (!hint.empty() && hint.front() == '"') {
+        hint = hint.substr(1);
+    } else if (!hint.empty() && hint.back() == '"') {
+        hint = hint.substr(0, hint.size() - 1);
+    }
+
+    std::string compact;
+    compact.reserve(hint.size());
+    for (char ch : hint) {
+        if (ch == ',' || ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r') {
+            continue;
+        }
+        compact.push_back(ch);
+    }
+
+    auto splitUtf8 = [](const std::string& s) {
+        std::vector<std::string> units;
+        for (std::size_t i = 0; i < s.size();) {
+            unsigned char c = static_cast<unsigned char>(s[i]);
+            std::size_t len = 1;
+            if ((c & 0x80) == 0x00) {
+                len = 1;
+            } else if ((c & 0xE0) == 0xC0) {
+                len = 2;
+            } else if ((c & 0xF0) == 0xE0) {
+                len = 3;
+            } else if ((c & 0xF8) == 0xF0) {
+                len = 4;
+            }
+
+            if (i + len > s.size()) {
+                len = 1;
+            }
+            units.emplace_back(s.substr(i, len));
+            i += len;
+        }
+        return units;
+    };
+
+    const auto units = splitUtf8(compact);
+    std::size_t len = units.size();
+    if (len == 0) {
+        return "Hint: (no letters)";
+    }
+
+    if (wrong_count == 1) {
+        return "Hint: " + std::string(len, '_') + " (" + std::to_string(len) + " 글자)";
+    }
+
+    if (wrong_count == 2) {
+        return "Hint: " + units[0] + std::string(len - 1, '_');
+    }
+
+    if (wrong_count == 3) {
+        std::size_t reveal = std::min<std::size_t>(2, len > 0 ? len - 1 : 0);
+        std::string prefix;
+        for (std::size_t i = 0; i < reveal; ++i) {
+            prefix += units[i];
+        }
+        return "Hint: " + prefix + std::string(len - reveal, '_');
+    }
+
+    return "Hint: " + hint + " (type it again)";
 }
