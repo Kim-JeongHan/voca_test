@@ -1,12 +1,13 @@
 // Voca Trainer Service Worker
 // Provides offline caching for PWA functionality
 
-const CACHE_NAME = 'voca-trainer-v1';
+const CACHE_NAME = 'voca-trainer-v2';
 const STATIC_ASSETS = [
     '/',
     '/index.html',
     '/css/style.css',
     '/js/storage.js',
+    '/js/tts.js',
     '/js/app.js',
     '/manifest.json'
 ];
@@ -60,12 +61,20 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
     const { request } = event;
 
-    // Skip non-GET requests
+    // Skip non-GET requests (POST for TTS worker, etc.)
     if (request.method !== 'GET') {
         return;
     }
 
-    // Skip cross-origin requests
+    // Allow cross-origin requests for TTS (Dictionary API, Cloudflare Worker)
+    // These should not be intercepted - let them go directly to network
+    const url = new URL(request.url);
+    if (url.hostname.includes('dictionaryapi.dev') ||
+        url.hostname.includes('workers.dev')) {
+        return;
+    }
+
+    // Skip other cross-origin requests
     if (!request.url.startsWith(self.location.origin)) {
         return;
     }

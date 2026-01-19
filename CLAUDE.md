@@ -94,7 +94,8 @@ docs/
 ├── css/style.css    : 스타일시트
 ├── js/
 │   ├── app.js       : 메인 애플리케이션 로직
-│   └── storage.js   : IndexedDB 저장소 래퍼
+│   ├── storage.js   : IndexedDB 저장소 래퍼 (v3: audio 캐시 포함)
+│   └── tts.js       : TTS 모듈 (Dictionary API + ElevenLabs)
 ├── wasm/            : C++ WASM 빌드 출력 (선택적)
 ├── words/           : 내장 단어장 CSV 파일
 ├── manifest.json    : PWA 매니페스트
@@ -107,12 +108,46 @@ docs/
 - **제출 버튼**: 답안 제출 (Enter 키와 동일)
 - **Save & Quit**: 세션 저장 후 종료
 - **Wrong Only**: 오답만 재학습
+- **TTS 발음**: 단어 표시/오답 시 발음 재생 (스피커 버튼으로 수동 재생 가능)
 
 ### 수정 시 주의
 
 - `app.js` 수정 시 WASM/JS fallback 양쪽 모두 고려
 - `storage.js`의 DB_VERSION 변경 시 onupgradeneeded 핸들러 확인
 - CSS는 모바일 우선 반응형 디자인
+- `tts.js`의 workerUrl은 배포된 Cloudflare Worker URL로 설정 필요
+
+## Cloudflare Worker (cloudflare-worker/)
+
+ElevenLabs TTS API 프록시. API 키를 서버 측에 안전하게 보관.
+
+### 배포
+
+```bash
+cd cloudflare-worker
+npm install -g wrangler
+wrangler login
+wrangler secret put ELEVENLABS_API_KEY  # .env 파일의 키 입력
+wrangler deploy
+```
+
+배포 후 URL을 `docs/js/tts.js`의 `CONFIG.workerUrl`에 설정.
+
+### 구조
+
+```
+cloudflare-worker/
+├── src/index.js     : Worker 코드 (입력 검증, 타임아웃, CORS)
+├── wrangler.toml    : 배포 설정
+└── README.md        : 배포 가이드
+```
+
+### 보안
+
+- voice_id는 서버에서 고정 (클라이언트 변경 불가)
+- 텍스트 길이 제한 (100자)
+- 8초 타임아웃
+- Content-Type 검증
 
 ## Context Map
 

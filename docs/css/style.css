@@ -437,11 +437,74 @@ footer {
     margin-top: auto;
 }
 
+/* TTS Section */
+.tts-section h3 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.tts-section .toggle-label {
+    margin-bottom: 8px;
+}
+
+.tts-section .btn-small {
+    margin-top: 12px;
+    width: 100%;
+}
+
+/* Question Row with Speaker Button */
+#question-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+}
+
+#speaker-btn {
+    flex-shrink: 0;
+    background: var(--surface-color);
+    border: 1px solid var(--border-color);
+    color: var(--text-color);
+    transition: all 0.2s;
+}
+
+#speaker-btn:hover {
+    background: var(--border-color);
+    color: var(--primary-color);
+}
+
+#speaker-btn:active {
+    transform: scale(0.95);
+}
+
+#speaker-btn.playing {
+    color: var(--primary-color);
+    animation: pulse-speaker 1s infinite;
+}
+
+@keyframes pulse-speaker {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.6; }
+}
+
+#speaker-btn svg {
+    display: block;
+}
+
+#speaker-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
 /* Focus Mode */
 body.focus-mode header,
 body.focus-mode footer,
 body.focus-mode #hint-text,
-body.focus-mode #attempt-info {
+body.focus-mode #attempt-info,
+body.focus-mode #speaker-btn {
     display: none;
 }
 

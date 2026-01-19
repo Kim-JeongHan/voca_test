@@ -9,3 +9,7 @@ words/
 # WASM outputs
 docs/wasm/*.js
 docs/wasm/*.wasm
+
+# Cloudflare Worker build artifacts
+cloudflare-worker/node_modules/
+cloudflare-worker/.wrangler/

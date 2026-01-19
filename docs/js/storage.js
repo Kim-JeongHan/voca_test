@@ -1,11 +1,12 @@
 // IndexedDB wrapper for deck and stats storage
 const VocaStorage = (() => {
     const DB_NAME = 'voca_trainer';
-    const DB_VERSION = 2;
+    const DB_VERSION = 3;
     const DECK_STORE = 'decks';
     const STATS_STORE = 'stats';
     const WRONG_STORE = 'wrong';
     const SESSION_STORE = 'session';
+    const AUDIO_STORE = 'audio';
 
     let db = null;
 
@@ -43,6 +44,12 @@ const VocaStorage = (() => {
                 // Session store: { id, deckName, timestamp }
                 if (!database.objectStoreNames.contains(SESSION_STORE)) {
                     database.createObjectStore(SESSION_STORE, { keyPath: 'id', autoIncrement: true });
+                }
+
+                // Audio cache store (v3): { key, blob, timestamp }
+                if (!database.objectStoreNames.contains(AUDIO_STORE)) {
+                    const audioStore = database.createObjectStore(AUDIO_STORE, { keyPath: 'key' });
+                    audioStore.createIndex('timestamp', 'timestamp');
                 }
             };
         });
@@ -203,6 +210,84 @@ const VocaStorage = (() => {
         });
     }
 
+    // ==================== Audio Cache Functions ====================
+
+    async function saveAudioBlob(key, blob) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(AUDIO_STORE, 'readwrite');
+            const store = tx.objectStore(AUDIO_STORE);
+            const request = store.put({
+                key,
+                blob,
+                timestamp: Date.now()
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getAudioBlob(key) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(AUDIO_STORE, 'readonly');
+            const store = tx.objectStore(AUDIO_STORE);
+            const request = store.get(key);
+            request.onsuccess = () => {
+                const result = request.result;
+                resolve(result ? result.blob : null);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function clearAudioCache() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(AUDIO_STORE, 'readwrite');
+            const store = tx.objectStore(AUDIO_STORE);
+            const request = store.clear();
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getAudioCacheStats() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(AUDIO_STORE, 'readonly');
+            const store = tx.objectStore(AUDIO_STORE);
+            const countReq = store.count();
+            countReq.onsuccess = () => {
+                resolve({ count: countReq.result });
+            };
+            countReq.onerror = () => reject(countReq.error);
+        });
+    }
+
+    async function pruneAudioCache(maxAgeDays = 30) {
+        await init();
+        const cutoff = Date.now() - (maxAgeDays * 24 * 60 * 60 * 1000);
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(AUDIO_STORE, 'readwrite');
+            const store = tx.objectStore(AUDIO_STORE);
+            const index = store.index('timestamp');
+            const range = IDBKeyRange.upperBound(cutoff);
+
+            const request = index.openCursor(range);
+            request.onsuccess = (event) => {
+                const cursor = event.target.result;
+                if (cursor) {
+                    cursor.delete();
+                    cursor.continue();
+                }
+            };
+            tx.oncomplete = () => resolve();
+            tx.onerror = () => reject(tx.error);
+        });
+    }
+
     return {
         init,
         saveDeck,
@@ -213,6 +298,11 @@ const VocaStorage = (() => {
         saveSessionState,
         getSessionState,
         clearSessionState,
+        saveAudioBlob,
+        getAudioBlob,
+        clearAudioCache,
+        getAudioCacheStats,
+        pruneAudioCache,
         parseCSV,
         toCSV,
         downloadFile

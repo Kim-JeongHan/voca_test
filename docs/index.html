@@ -48,6 +48,19 @@
                         <span>Focus Mode</span>
                     </label>
                 </div>
+
+                <div class="options-section tts-section">
+                    <h3>Audio (TTS)</h3>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="tts-toggle" checked>
+                        <span>Enable TTS</span>
+                    </label>
+                    <label class="toggle-label">
+                        <input type="checkbox" id="tts-autoplay-toggle" checked>
+                        <span>Auto-play on new word</span>
+                    </label>
+                    <button id="clear-audio-cache-btn" class="btn btn-secondary btn-small">Clear Audio Cache</button>
+                </div>
             </main>
         </div>
 
@@ -62,7 +75,14 @@
             </header>
             <main>
                 <div id="question-area">
-                    <div id="question-text"></div>
+                    <div id="question-row">
+                        <div id="question-text"></div>
+                        <button id="speaker-btn" class="btn-icon" title="Play pronunciation">
+                            <svg viewBox="0 0 24 24" width="24" height="24" fill="currentColor">
+                                <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
+                            </svg>
+                        </button>
+                    </div>
                     <div id="hint-text"></div>
                 </div>
                 <div id="answer-area">
@@ -109,6 +129,7 @@
 
     <script src="wasm/voca_core.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/tts.js"></script>
     <script src="js/app.js"></script>
     <script>
         // Register service worker for offline support

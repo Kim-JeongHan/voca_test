@@ -45,6 +45,9 @@ const VocaApp = (() => {
         elements.startShortBtn = document.getElementById('start-short-btn');
         elements.startWrongBtn = document.getElementById('start-wrong-btn');
         elements.focusModeToggle = document.getElementById('focus-mode-toggle');
+        elements.ttsToggle = document.getElementById('tts-toggle');
+        elements.ttsAutoPlayToggle = document.getElementById('tts-autoplay-toggle');
+        elements.clearAudioCacheBtn = document.getElementById('clear-audio-cache-btn');
 
         // Session screen
         elements.backBtn = document.getElementById('back-btn');
@@ -60,6 +63,7 @@ const VocaApp = (() => {
         elements.feedbackIcon = document.getElementById('feedback-icon');
         elements.feedbackText = document.getElementById('feedback-text');
         elements.attemptInfo = document.getElementById('attempt-info');
+        elements.speakerBtn = document.getElementById('speaker-btn');
 
         // Summary screen
         elements.scoreValue = document.getElementById('score-value');
@@ -80,6 +84,19 @@ const VocaApp = (() => {
         elements.startWrongBtn.addEventListener('click', () => startSession('wrong'));
         elements.focusModeToggle.addEventListener('change', toggleFocusMode);
 
+        // TTS settings
+        if (elements.ttsToggle) {
+            elements.ttsToggle.checked = VocaTTS.isEnabled();
+            elements.ttsToggle.addEventListener('change', (e) => VocaTTS.setEnabled(e.target.checked));
+        }
+        if (elements.ttsAutoPlayToggle) {
+            elements.ttsAutoPlayToggle.checked = VocaTTS.isAutoPlay();
+            elements.ttsAutoPlayToggle.addEventListener('change', (e) => VocaTTS.setAutoPlay(e.target.checked));
+        }
+        if (elements.clearAudioCacheBtn) {
+            elements.clearAudioCacheBtn.addEventListener('click', handleClearAudioCache);
+        }
+
         // Session screen
         elements.backBtn.addEventListener('click', confirmQuit);
         elements.answerInput.addEventListener('keydown', handleAnswerKeydown);
@@ -91,6 +108,24 @@ const VocaApp = (() => {
         elements.exportWrongBtn.addEventListener('click', exportWrongList);
         elements.retryWrongBtn.addEventListener('click', () => startSession('wrong'));
         elements.homeBtn.addEventListener('click', showHome);
+
+        // Speaker button
+        if (elements.speakerBtn) {
+            elements.speakerBtn.addEventListener('click', handleSpeakerClick);
+        }
+    }
+
+    async function handleClearAudioCache() {
+        if (confirm('Clear all cached audio? This will not delete your word data.')) {
+            await VocaStorage.clearAudioCache();
+            alert('Audio cache cleared');
+        }
+    }
+
+    function handleSpeakerClick() {
+        if (currentQuestion?.word) {
+            VocaTTS.play(currentQuestion.word);
+        }
     }
 
     async function initStorage() {
@@ -169,7 +204,7 @@ const VocaApp = (() => {
                 const wc = wrongCounts[key] || 0;
                 let hint = '';
                 if (wc > 0) {
-                    const letters = current.correct.replace(/[\s,]/g, '');
+                    const letters = current.correct.replace(/[\s,"']/g, '');
                     if (wc === 1) hint = `Hint: ${'_'.repeat(letters.length)} (${letters.length} 글자)`;
                     else if (wc === 2) hint = `Hint: ${letters[0]}${'_'.repeat(letters.length - 1)}`;
                     else if (wc === 3) hint = `Hint: ${letters.substring(0, 2)}${'_'.repeat(letters.length - 2)}`;
@@ -323,6 +358,9 @@ const VocaApp = (() => {
     async function startSession(mode) {
         if (!currentDeck) return;
 
+        // Unlock audio on session start (user gesture)
+        VocaTTS.unlockAudio();
+
         // Create WASM session
         if (vocaCore._session_create) {
             session = vocaCore._session_create();
@@ -404,6 +442,11 @@ const VocaApp = (() => {
         elements.hintText.textContent = prompt.hint || '';
         updateAttemptInfo();
 
+        // TTS: Auto-play on new word (if enabled and unlocked)
+        if (VocaTTS.canAutoPlay()) {
+            VocaTTS.play(prompt.question_text);
+        }
+
         const progress = prompt.progress;
         elements.progressText.textContent = `${progress.done}/${progress.total}`;
         elements.progressFill.style.width = `${(progress.done / progress.total) * 100}%`;
@@ -448,7 +491,7 @@ const VocaApp = (() => {
         // Generate hint based on hint count
         if (currentQuestion) {
             const correct = currentQuestion.correct || '';
-            const letters = correct.replace(/[\s,]/g, '');
+            const letters = correct.replace(/[\s,"']/g, '');
             let hint = '';
 
             if (hintCount === 1) {
@@ -517,6 +560,11 @@ const VocaApp = (() => {
             elements.feedbackArea.className = 'incorrect';
             elements.feedbackIcon.textContent = '✗';
             elements.feedbackText.textContent = feedback.correct_answer;
+
+            // TTS: Play word pronunciation on wrong answer
+            if (VocaTTS.isEnabled() && currentQuestion?.word) {
+                setTimeout(() => VocaTTS.play(currentQuestion.word), 300);
+            }
         }
 
         // Handle next action

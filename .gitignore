@@ -43,6 +43,15 @@ docs/wasm/*.wasm
 # Claude Code
 .claude/
 
+# Environment / Secrets
+.env
+.env.local
+.env.*.local
+
+# Cloudflare Worker
+cloudflare-worker/node_modules/
+cloudflare-worker/.wrangler/
+
 # # Generated vocab test outputs
 # words/*_wrong.csv
 # words/*_test.csv
