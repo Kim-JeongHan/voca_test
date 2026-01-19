@@ -12,11 +12,9 @@ const VocaStorage = (() => {
 
     async function init() {
         if (db) {
-            console.log('💾 Storage: Already initialized');
             return db;
         }
 
-        console.log('💾 Storage: Initializing IndexedDB...');
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
 
@@ -27,12 +25,10 @@ const VocaStorage = (() => {
 
             request.onsuccess = () => {
                 db = request.result;
-                console.log('💾 Storage: IndexedDB initialized successfully');
                 resolve(db);
             };
 
             request.onupgradeneeded = (event) => {
-                console.log('💾 Storage: Upgrading DB schema...');
                 const database = event.target.result;
 
                 // Deck store: { id, name, words: [{word, meaning}], created }
@@ -60,13 +56,18 @@ const VocaStorage = (() => {
                     const audioStore = database.createObjectStore(AUDIO_STORE, { keyPath: 'key' });
                     audioStore.createIndex('timestamp', 'timestamp');
                 }
-                console.log('💾 Storage: DB schema upgrade complete');
+                
+                // Note: onupgradeneeded completes before onsuccess is called
+            };
+            
+            request.onblocked = () => {
+                console.warn('💾 Storage: Database upgrade blocked - close other tabs');
+                reject(new Error('Database upgrade blocked'));
             };
         });
     }
 
     async function saveDeck(name, words) {
-        console.log(`💾 Storage: Saving deck "${name}" with ${words.length} words...`);
         await init();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(DECK_STORE, 'readwrite');
@@ -82,7 +83,6 @@ const VocaStorage = (() => {
             };
             const request = store.add(deck);
             request.onsuccess = () => {
-                console.log(`💾 Storage: Deck "${name}" saved successfully (ID: ${request.result})`);
                 resolve(request.result);
             };
             request.onerror = () => {
@@ -93,7 +93,6 @@ const VocaStorage = (() => {
     }
 
     async function getDeck() {
-        console.log('💾 Storage: Getting deck...');
         await init();
         return new Promise((resolve, reject) => {
             const tx = db.transaction(DECK_STORE, 'readonly');
@@ -102,7 +101,6 @@ const VocaStorage = (() => {
             request.onsuccess = () => {
                 const decks = request.result;
                 const deck = decks.length > 0 ? decks[0] : null;
-                console.log('💾 Storage: Got deck:', deck ? `"${deck.name}" (${deck.words.length} words)` : 'null');
                 resolve(deck);
             };
             request.onerror = () => {

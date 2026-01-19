@@ -21,35 +21,16 @@ const VocaApp = (() => {
 
     // Initialize application
     async function init() {
-        console.log('🚀 Initializing VocaApp...');
         try {
             cacheElements();
-            console.log('✅ Elements cached');
-            
             bindEvents();
-            console.log('✅ Events bound');
-            
-            console.log('💾 About to call initStorage()...');
             await initStorage();
-            console.log('✅ Storage initialized');
-            
-            console.log('🔧 About to call loadWasm()...');
             await loadWasm();
-            console.log('✅ WASM/Fallback loaded');
-            
-            console.log('📚 About to call loadDeck()...');
             await loadDeck();
-            console.log('✅ Deck loaded');
-            
-            console.log('🎨 About to call updateUI()...');
             updateUI();
-            console.log('✅ UI updated');
-            
-            console.log('🎉 VocaApp initialization complete!');
         } catch (err) {
-            console.error('💥 VocaApp initialization failed:', err);
-            console.error('💥 Error stack:', err.stack);
-            alert('Failed to initialize app. Please refresh the page.\n\nError: ' + err.message);
+            console.error('Failed to initialize app:', err);
+            alert('Failed to initialize app. Please refresh the page.');
         }
     }
 
@@ -153,14 +134,7 @@ const VocaApp = (() => {
     }
 
     async function initStorage() {
-        console.log('💾 Calling VocaStorage.init()...');
-        try {
-            await VocaStorage.init();
-            console.log('✅ VocaStorage.init() completed');
-        } catch (err) {
-            console.error('❌ VocaStorage.init() failed:', err);
-            throw err;
-        }
+        await VocaStorage.init();
     }
 
     async function loadWasm() {
@@ -293,16 +267,12 @@ const VocaApp = (() => {
     }
 
     async function loadDeck() {
-        console.log('🔍 Loading deck from storage...');
         currentDeck = await VocaStorage.getDeck();
-        console.log('💾 Current deck from storage:', currentDeck ? `${currentDeck.name} (${currentDeck.words.length} words)` : 'null');
         
         // Auto-load default deck (Day 1) if no deck is loaded
         if (!currentDeck) {
-            console.log('⚠️ No deck in storage, loading default deck...');
             await loadDefaultDeck();
             currentDeck = await VocaStorage.getDeck();
-            console.log('💾 Current deck after default load:', currentDeck ? `${currentDeck.name} (${currentDeck.words.length} words)` : 'still null');
         }
         
         populateDeckSelect();
@@ -311,27 +281,17 @@ const VocaApp = (() => {
     async function loadDefaultDeck() {
         const defaultDeck = '1'; // Day 1 as default
         try {
-            console.log('🔄 Attempting to load default deck:', defaultDeck);
             const response = await fetch(`words/${defaultDeck}.csv`);
-            console.log('📡 Fetch response status:', response.status, response.ok);
-            
-            if (!response.ok) {
-                console.warn('❌ Failed to fetch default deck:', response.status, response.statusText);
-                return;
-            }
+            if (!response.ok) return;
 
             const text = await response.text();
-            console.log('📄 CSV text length:', text.length);
-            
             const words = VocaStorage.parseCSV(text);
-            console.log('📝 Parsed words count:', words.length);
 
             if (words.length > 0) {
                 await VocaStorage.saveDeck(defaultDeck, words);
-                console.log(`✅ Default deck (Day ${defaultDeck}) loaded automatically`);
             }
         } catch (err) {
-            console.error('❌ Failed to load default deck:', err);
+            console.error('Failed to load default deck:', err);
         }
     }
 
@@ -352,10 +312,6 @@ const VocaApp = (() => {
         // Select current deck in dropdown
         if (currentDeck) {
             elements.deckSelect.value = currentDeck.name;
-            console.log('📋 Dropdown updated to show:', currentDeck.name);
-        } else {
-            elements.deckSelect.value = '';
-            console.log('📋 Dropdown reset (no deck loaded)');
         }
     }
 
@@ -385,19 +341,16 @@ const VocaApp = (() => {
     }
 
     function updateUI() {
-        console.log('🎨 Updating UI, currentDeck:', currentDeck);
         if (currentDeck) {
             elements.deckName.textContent = currentDeck.name;
             elements.deckCount.textContent = `${currentDeck.words.length} words`;
             elements.startAllBtn.disabled = false;
             elements.startShortBtn.disabled = currentDeck.words.length < 10;
-            console.log('✅ UI updated with deck:', currentDeck.name);
         } else {
             elements.deckName.textContent = 'No deck loaded';
             elements.deckCount.textContent = '0 words';
             elements.startAllBtn.disabled = true;
             elements.startShortBtn.disabled = true;
-            console.log('⚠️ UI updated - No deck loaded');
         }
 
         updateWrongButton();
