@@ -482,9 +482,9 @@ const VocaApp = (() => {
             VocaTTS.play(prompt.question_text);
         }
 
-        const progress = prompt.progress;
+        const progress = prompt.progress || { done: 0, total: 0 };
         elements.progressText.textContent = `${progress.done}/${progress.total}`;
-        elements.progressFill.style.width = `${(progress.done / progress.total) * 100}%`;
+        elements.progressFill.style.width = progress.total > 0 ? `${(progress.done / progress.total) * 100}%` : '0%';
 
         // Reset input and buttons
         elements.answerInput.value = '';
