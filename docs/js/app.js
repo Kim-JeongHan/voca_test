@@ -21,12 +21,20 @@ const VocaApp = (() => {
 
     // Initialize application
     async function init() {
+        console.log('🚀 Initializing VocaApp...');
         cacheElements();
+        console.log('✅ Elements cached');
         bindEvents();
+        console.log('✅ Events bound');
         await initStorage();
+        console.log('✅ Storage initialized');
         await loadWasm();
+        console.log('✅ WASM/Fallback loaded');
         await loadDeck();
+        console.log('✅ Deck loaded');
         updateUI();
+        console.log('✅ UI updated');
+        console.log('🎉 VocaApp initialization complete!');
     }
 
     function cacheElements() {
@@ -345,16 +353,19 @@ const VocaApp = (() => {
     }
 
     function updateUI() {
+        console.log('🎨 Updating UI, currentDeck:', currentDeck);
         if (currentDeck) {
             elements.deckName.textContent = currentDeck.name;
             elements.deckCount.textContent = `${currentDeck.words.length} words`;
             elements.startAllBtn.disabled = false;
             elements.startShortBtn.disabled = currentDeck.words.length < 10;
+            console.log('✅ UI updated with deck:', currentDeck.name);
         } else {
             elements.deckName.textContent = 'No deck loaded';
             elements.deckCount.textContent = '0 words';
             elements.startAllBtn.disabled = true;
             elements.startShortBtn.disabled = true;
+            console.log('⚠️ UI updated - No deck loaded');
         }
 
         updateWrongButton();
