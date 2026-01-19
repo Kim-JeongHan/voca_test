@@ -60,6 +60,7 @@ const VocaStorage = (() => {
                     const audioStore = database.createObjectStore(AUDIO_STORE, { keyPath: 'key' });
                     audioStore.createIndex('timestamp', 'timestamp');
                 }
+                console.log('💾 Storage: DB schema upgrade complete');
             };
         });
     }

@@ -22,19 +22,24 @@ const VocaApp = (() => {
     // Initialize application
     async function init() {
         console.log('🚀 Initializing VocaApp...');
-        cacheElements();
-        console.log('✅ Elements cached');
-        bindEvents();
-        console.log('✅ Events bound');
-        await initStorage();
-        console.log('✅ Storage initialized');
-        await loadWasm();
-        console.log('✅ WASM/Fallback loaded');
-        await loadDeck();
-        console.log('✅ Deck loaded');
-        updateUI();
-        console.log('✅ UI updated');
-        console.log('🎉 VocaApp initialization complete!');
+        try {
+            cacheElements();
+            console.log('✅ Elements cached');
+            bindEvents();
+            console.log('✅ Events bound');
+            await initStorage();
+            console.log('✅ Storage initialized');
+            await loadWasm();
+            console.log('✅ WASM/Fallback loaded');
+            await loadDeck();
+            console.log('✅ Deck loaded');
+            updateUI();
+            console.log('✅ UI updated');
+            console.log('🎉 VocaApp initialization complete!');
+        } catch (err) {
+            console.error('💥 VocaApp initialization failed:', err);
+            alert('Failed to initialize app. Please refresh the page.');
+        }
     }
 
     function cacheElements() {
@@ -137,7 +142,14 @@ const VocaApp = (() => {
     }
 
     async function initStorage() {
-        await VocaStorage.init();
+        console.log('💾 Calling VocaStorage.init()...');
+        try {
+            await VocaStorage.init();
+            console.log('✅ VocaStorage.init() completed');
+        } catch (err) {
+            console.error('❌ VocaStorage.init() failed:', err);
+            throw err;
+        }
     }
 
     async function loadWasm() {
