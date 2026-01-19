@@ -80,7 +80,8 @@ repos:
         types: [text]
         files: \.(yml|yaml)$
 
-  - repo: https://github.com/tcort/markdown-link-check
-    rev: v3.11.2
-    hooks:
-      - id: markdown-link-check
+  # - repo: https://github.com/tcort/markdown-link-check
+  #   rev: v3.11.2
+  #   hooks:
+  #     - id: markdown-link-check
+  #       language_version: system

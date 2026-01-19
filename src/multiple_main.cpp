@@ -11,8 +11,8 @@ int main(int argc, char* argv[])
     std::string filepath;
 
     try
-    { 
-        if (argc < 2) 
+    {
+        if (argc < 2)
             throw std::runtime_error("Please enter the number of the voca file you want to test.");
     }
     catch(const std::exception& e)
@@ -25,7 +25,7 @@ int main(int argc, char* argv[])
     {
         filename.push_back(argv[i]);
     }
-    
+
     filepath = "../words/";
 
     TestVoca test(filepath, filename);
