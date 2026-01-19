@@ -160,7 +160,14 @@ const VocaApp = (() => {
         let wrongCounts = {};
 
         function normalize(s) {
-            return s.replace(/[\s,'"]/g, '').toLowerCase();
+            return s.replace(/[\s'"]/g, '').toLowerCase();
+        }
+
+        function checkAnswer(answer, correct) {
+            const normAnswer = normalize(answer);
+            // Check if answer matches any of the comma-separated meanings
+            const meanings = correct.split(',').map(m => normalize(m.trim()));
+            return meanings.some(m => m === normAnswer);
         }
 
         return {
@@ -214,7 +221,7 @@ const VocaApp = (() => {
                 if (!current) return JSON.stringify({ is_correct: true, next_action: 'show_summary' });
 
                 const key = current.word + '|' + current.correct;
-                const isCorrect = normalize(answer) === normalize(current.correct);
+                const isCorrect = checkAnswer(answer, current.correct);
 
                 if (!isCorrect) {
                     wrongCounts[key] = (wrongCounts[key] || 0) + 1;
