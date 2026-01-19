@@ -25,20 +25,31 @@ const VocaApp = (() => {
         try {
             cacheElements();
             console.log('✅ Elements cached');
+            
             bindEvents();
             console.log('✅ Events bound');
+            
+            console.log('💾 About to call initStorage()...');
             await initStorage();
             console.log('✅ Storage initialized');
+            
+            console.log('🔧 About to call loadWasm()...');
             await loadWasm();
             console.log('✅ WASM/Fallback loaded');
+            
+            console.log('📚 About to call loadDeck()...');
             await loadDeck();
             console.log('✅ Deck loaded');
+            
+            console.log('🎨 About to call updateUI()...');
             updateUI();
             console.log('✅ UI updated');
+            
             console.log('🎉 VocaApp initialization complete!');
         } catch (err) {
             console.error('💥 VocaApp initialization failed:', err);
-            alert('Failed to initialize app. Please refresh the page.');
+            console.error('💥 Error stack:', err.stack);
+            alert('Failed to initialize app. Please refresh the page.\n\nError: ' + err.message);
         }
     }
 
