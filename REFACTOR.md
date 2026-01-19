@@ -354,8 +354,81 @@ This plan keeps deployments low-risk and verifiable at each step.
 
 ## Implementation Status (Current Repo)
 
-* Core session API (JSON prompt/feedback) added.
-* Session flow test added.
+### Completed
+
+* Core session API (JSON prompt/feedback) - `VocaSession` class
+* Session flow test - `tests/test_session.cpp`
+* `voca_core` library target (static library for WASM)
+* C API wrapper for WASM - `voca_wasm.hpp/cpp`
+* Emscripten build configuration in CMakeLists.txt
+* PWA skeleton in `web/` directory:
+  * `index.html` - mobile-first UI
+  * `css/style.css` - one-handed friendly design
+  * `js/app.js` - session runner with JS fallback
+  * `js/storage.js` - IndexedDB wrapper
+  * `sw.js` - service worker for offline
+  * `manifest.json` - PWA manifest
+* Deck import/export functionality
+* Golden tests for protocol stability - `tests/test_golden.cpp`
+* Focus mode toggle
+
+### Pending
+
+* WASM build (requires Emscripten SDK)
+* Icon assets (PNG from SVG)
+* Stats export UI
+* Production deployment
+
+---
+
+## JSON Protocol Schema
+
+### Prompt
+
+```json
+{
+  "question_id": "string",
+  "question_text": "string",
+  "direction": "en_to_kr",
+  "hint": "string (empty or 'Hint: ...')",
+  "attempt": "number (1-based)",
+  "progress": {
+    "done": "number",
+    "total": "number"
+  }
+}
+```
+
+### Feedback
+
+```json
+{
+  "is_correct": "boolean",
+  "correct_answer": "string",
+  "next_action": "retry_same | next_question | show_summary",
+  "hint_level": "number (0-4)"
+}
+```
+
+### Summary
+
+```json
+{
+  "score": "number",
+  "total": "number",
+  "wrong_count": "number"
+}
+```
+
+### Hint Levels
+
+| Level | Display |
+|-------|---------|
+| 0 | No hint |
+| 1 | `_ _ _ (N 글자)` - letter count |
+| 2 | `가 _ _` - first character |
+| 3 | `가나 _` - prefix (2 chars) |
+| 4 | `가나다 (type it again)` - full answer |
 
 ---
 
@@ -372,19 +445,71 @@ Once these are stable, every UI becomes easy.
 
 ## Deliverables Checklist
 
-* `voca_core` library target with a session API
-* JSON protocol definitions documented in README
-* PWA skeleton with:
-
-  * deck import/export
-  * session runner
-  * offline support
-* CI that validates:
-
-  * core tests
-  * optional wasm build
-  * protocol golden tests
+* [x] `voca_core` library target with a session API
+* [x] JSON protocol definitions documented (see above)
+* [x] PWA skeleton with:
+  * [x] deck import/export
+  * [x] session runner
+  * [x] offline support
+* [x] CI that validates:
+  * [x] core tests
+  * [ ] optional wasm build
+  * [x] protocol golden tests
 
 ---
 
-If you want, I can also write a ready-to-paste `README` section that explains the mobile architecture and usage flow (import deck → run session → export wrong/stats), plus a clean JSON schema block for the session protocol.
+## Build Instructions
+
+### Native Build (CLI + Tests)
+
+```bash
+cmake -S . -B build && cmake --build build
+cd build && ctest --output-on-failure
+```
+
+### WASM Build (requires Emscripten)
+
+```bash
+# Install Emscripten first:
+# git clone https://github.com/emscripten-core/emsdk.git
+# cd emsdk && ./emsdk install latest && ./emsdk activate latest
+# source ./emsdk_env.sh
+
+./build_wasm.sh
+```
+
+### Run PWA Locally
+
+```bash
+cd web
+python3 -m http.server 8080
+# Open http://localhost:8080
+```
+
+---
+
+## File Structure
+
+```
+voca_test/
+├── include/voca_test/
+│   ├── voca_session.hpp     # Session API
+│   └── voca_wasm.hpp        # C API for WASM
+├── src/
+│   ├── voca_session.cpp     # Session implementation
+│   └── voca_wasm.cpp        # WASM bindings
+├── tests/
+│   ├── test_session.cpp     # Unit tests
+│   └── test_golden.cpp      # Protocol golden tests
+├── web/
+│   ├── index.html           # PWA entry
+│   ├── css/style.css        # Mobile-first styles
+│   ├── js/app.js            # Session runner
+│   ├── js/storage.js        # IndexedDB wrapper
+│   ├── sw.js                # Service worker
+│   ├── manifest.json        # PWA manifest
+│   ├── wasm/                # WASM output (after build)
+│   └── icons/               # App icons
+├── build_wasm.sh            # WASM build script
+└── CMakeLists.txt           # Build configuration
+```

@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <meta name="theme-color" content="#1a1a2e">
+    <meta name="description" content="Vocabulary training app - Learn words with immediate retry and progressive hints">
+    <title>Voca Trainer</title>
+    <link rel="manifest" href="manifest.json">
+    <link rel="apple-touch-icon" href="icons/icon-192.png">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div id="app">
+        <!-- Home Screen -->
+        <div id="home-screen" class="screen active">
+            <header>
+                <h1>Voca Trainer</h1>
+            </header>
+            <main>
+                <div class="deck-section">
+                    <h2>Deck</h2>
+                    <div id="deck-info" class="deck-info">
+                        <span id="deck-name">No deck loaded</span>
+                        <span id="deck-count">0 words</span>
+                    </div>
+                    <div class="deck-actions">
+                        <button id="import-btn" class="btn btn-secondary">Import CSV</button>
+                        <input type="file" id="file-input" accept=".csv" hidden>
+                    </div>
+                </div>
+
+                <div class="session-section">
+                    <h2>Start Session</h2>
+                    <div class="preset-buttons">
+                        <button id="start-all-btn" class="btn btn-primary" disabled>All Words</button>
+                        <button id="start-short-btn" class="btn btn-primary" disabled>Short (20)</button>
+                        <button id="start-wrong-btn" class="btn btn-primary" disabled>Wrong Only</button>
+                    </div>
+                </div>
+
+                <div class="options-section">
+                    <label class="toggle-label">
+                        <input type="checkbox" id="focus-mode-toggle">
+                        <span>Focus Mode</span>
+                    </label>
+                </div>
+            </main>
+        </div>
+
+        <!-- Session Screen -->
+        <div id="session-screen" class="screen">
+            <header>
+                <button id="back-btn" class="btn-icon">&larr;</button>
+                <div id="progress-display">
+                    <span id="progress-text">0/0</span>
+                    <div id="progress-bar"><div id="progress-fill"></div></div>
+                </div>
+            </header>
+            <main>
+                <div id="question-area">
+                    <div id="question-text"></div>
+                    <div id="hint-text"></div>
+                </div>
+                <div id="answer-area">
+                    <input type="text" id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
+                    <div id="feedback-area" class="hidden">
+                        <div id="feedback-icon"></div>
+                        <div id="feedback-text"></div>
+                    </div>
+                </div>
+            </main>
+            <footer>
+                <div id="attempt-info">Attempt: 1</div>
+            </footer>
+        </div>
+
+        <!-- Summary Screen -->
+        <div id="summary-screen" class="screen">
+            <header>
+                <h1>Session Complete</h1>
+            </header>
+            <main>
+                <div id="score-display">
+                    <div id="score-circle">
+                        <span id="score-value">0</span>
+                        <span id="score-total">/0</span>
+                    </div>
+                </div>
+                <div id="wrong-count-display">
+                    <span id="wrong-count">0</span> words needed retry
+                </div>
+                <div class="summary-actions">
+                    <button id="export-wrong-btn" class="btn btn-secondary">Export Wrong</button>
+                    <button id="retry-wrong-btn" class="btn btn-primary" disabled>Retry Wrong</button>
+                    <button id="home-btn" class="btn btn-primary">Home</button>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <script src="wasm/voca_core.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/app.js"></script>
+    <script>
+        // Register service worker for offline support
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('Service worker registered'))
+                    .catch(err => console.log('Service worker registration failed:', err));
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,437 @@
+/* Voca Trainer PWA Styles */
+/* Mobile-first, one-handed friendly design */
+
+:root {
+    --primary-color: #4a90d9;
+    --primary-dark: #357abd;
+    --success-color: #4caf50;
+    --error-color: #f44336;
+    --bg-color: #1a1a2e;
+    --surface-color: #16213e;
+    --text-color: #eef0f2;
+    --text-muted: #8b9dc3;
+    --border-color: #2d4263;
+    --input-bg: #0f0f23;
+    --font-main: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: var(--font-main);
+    background: var(--bg-color);
+    color: var(--text-color);
+    -webkit-tap-highlight-color: transparent;
+}
+
+#app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Screen Management */
+.screen {
+    display: none;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
+}
+
+.screen.active {
+    display: flex;
+}
+
+/* Headers */
+header {
+    padding: 16px;
+    background: var(--surface-color);
+    border-bottom: 1px solid var(--border-color);
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-height: 60px;
+}
+
+header h1 {
+    font-size: 1.25rem;
+    font-weight: 600;
+}
+
+/* Main content */
+main {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+footer {
+    padding: 12px 20px;
+    background: var(--surface-color);
+    border-top: 1px solid var(--border-color);
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 0.875rem;
+}
+
+/* Buttons */
+.btn {
+    padding: 14px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 1rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+    min-height: 48px;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.btn-primary {
+    background: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:not(:disabled):hover,
+.btn-primary:not(:disabled):active {
+    background: var(--primary-dark);
+}
+
+.btn-secondary {
+    background: var(--surface-color);
+    color: var(--text-color);
+    border: 1px solid var(--border-color);
+}
+
+.btn-secondary:not(:disabled):hover,
+.btn-secondary:not(:disabled):active {
+    background: var(--border-color);
+}
+
+.btn-icon {
+    background: none;
+    border: none;
+    color: var(--text-color);
+    font-size: 1.5rem;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 50%;
+    width: 44px;
+    height: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.btn-icon:hover {
+    background: var(--border-color);
+}
+
+/* Home Screen Sections */
+.deck-section,
+.session-section,
+.options-section {
+    background: var(--surface-color);
+    border-radius: 12px;
+    padding: 20px;
+}
+
+.deck-section h2,
+.session-section h2 {
+    font-size: 0.875rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-bottom: 12px;
+}
+
+.deck-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+}
+
+#deck-name {
+    font-size: 1.125rem;
+    font-weight: 500;
+}
+
+#deck-count {
+    color: var(--text-muted);
+}
+
+.deck-actions {
+    display: flex;
+    gap: 12px;
+}
+
+.preset-buttons {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* Toggle */
+.toggle-label {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.toggle-label input[type="checkbox"] {
+    width: 48px;
+    height: 28px;
+    appearance: none;
+    background: var(--border-color);
+    border-radius: 14px;
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.toggle-label input[type="checkbox"]::before {
+    content: '';
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: transform 0.2s;
+}
+
+.toggle-label input[type="checkbox"]:checked {
+    background: var(--primary-color);
+}
+
+.toggle-label input[type="checkbox"]:checked::before {
+    transform: translateX(20px);
+}
+
+/* Session Screen */
+#progress-display {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+#progress-text {
+    font-size: 0.875rem;
+    color: var(--text-muted);
+    text-align: center;
+}
+
+#progress-bar {
+    height: 4px;
+    background: var(--border-color);
+    border-radius: 2px;
+    overflow: hidden;
+}
+
+#progress-fill {
+    height: 100%;
+    background: var(--primary-color);
+    width: 0%;
+    transition: width 0.3s;
+}
+
+#question-area {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 16px;
+}
+
+#question-text {
+    font-size: 2rem;
+    font-weight: 600;
+}
+
+#hint-text {
+    font-size: 1.125rem;
+    color: var(--text-muted);
+    min-height: 1.5em;
+}
+
+#answer-area {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+#answer-input {
+    width: 100%;
+    padding: 16px;
+    font-size: 1.25rem;
+    background: var(--input-bg);
+    border: 2px solid var(--border-color);
+    border-radius: 12px;
+    color: var(--text-color);
+    text-align: center;
+    outline: none;
+}
+
+#answer-input:focus {
+    border-color: var(--primary-color);
+}
+
+#answer-input.correct {
+    border-color: var(--success-color);
+    animation: pulse-correct 0.3s;
+}
+
+#answer-input.incorrect {
+    border-color: var(--error-color);
+    animation: shake 0.3s;
+}
+
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+@keyframes pulse-correct {
+    50% { transform: scale(1.02); }
+}
+
+#feedback-area {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 12px;
+    border-radius: 8px;
+    font-size: 1rem;
+    min-height: 48px;
+}
+
+#feedback-area.hidden {
+    visibility: hidden;
+}
+
+#feedback-area.correct {
+    background: rgba(76, 175, 80, 0.15);
+    color: var(--success-color);
+}
+
+#feedback-area.incorrect {
+    background: rgba(244, 67, 54, 0.15);
+    color: var(--error-color);
+}
+
+#feedback-icon {
+    font-size: 1.5rem;
+}
+
+/* Summary Screen */
+#score-display {
+    display: flex;
+    justify-content: center;
+    padding: 40px 0;
+}
+
+#score-circle {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: var(--surface-color);
+    border: 4px solid var(--primary-color);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+#score-value {
+    font-size: 3rem;
+    font-weight: 700;
+}
+
+#score-total {
+    font-size: 1.5rem;
+    color: var(--text-muted);
+}
+
+#wrong-count-display {
+    text-align: center;
+    color: var(--text-muted);
+    font-size: 1.125rem;
+}
+
+#wrong-count {
+    color: var(--error-color);
+    font-weight: 600;
+}
+
+.summary-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-top: auto;
+}
+
+/* Focus Mode */
+body.focus-mode header,
+body.focus-mode footer,
+body.focus-mode #hint-text,
+body.focus-mode #attempt-info {
+    display: none;
+}
+
+body.focus-mode main {
+    padding-top: 40px;
+}
+
+body.focus-mode #question-text {
+    font-size: 2.5rem;
+}
+
+/* Responsive adjustments */
+@media (min-width: 600px) {
+    main {
+        max-width: 500px;
+        margin: 0 auto;
+        width: 100%;
+    }
+
+    .preset-buttons {
+        flex-direction: row;
+    }
+
+    .preset-buttons .btn {
+        flex: 1;
+    }
+
+    .summary-actions {
+        flex-direction: row;
+    }
+
+    .summary-actions .btn {
+        flex: 1;
+    }
+}

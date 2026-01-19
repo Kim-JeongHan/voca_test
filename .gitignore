@@ -31,8 +31,17 @@
 *.out
 *.app
 
+# Build directories
 build/
+build_wasm/
 install/
+
+# WASM outputs
+web/wasm/*.js
+web/wasm/*.wasm
+
+# Claude Code
+.claude/
 
 # # Generated vocab test outputs
 # words/*_wrong.csv
