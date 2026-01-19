@@ -79,6 +79,22 @@ self.addEventListener('fetch', (event) => {
         return;
     }
 
+    // CSV files: Network first strategy (always get latest data)
+    if (request.url.endsWith('.csv')) {
+        event.respondWith(
+            fetch(request)
+                .then((response) => {
+                    if (response.ok) {
+                        const cache = caches.open(CACHE_NAME);
+                        cache.then(c => c.put(request, response.clone()));
+                    }
+                    return response;
+                })
+                .catch(() => caches.match(request))
+        );
+        return;
+    }
+
     event.respondWith(
         caches.match(request)
             .then((cachedResponse) => {

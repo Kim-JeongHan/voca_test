@@ -21,17 +21,12 @@ const VocaApp = (() => {
 
     // Initialize application
     async function init() {
-        try {
-            cacheElements();
-            bindEvents();
-            await initStorage();
-            await loadWasm();
-            await loadDeck();
-            updateUI();
-        } catch (err) {
-            console.error('Failed to initialize app:', err);
-            alert('Failed to initialize app. Please refresh the page.');
-        }
+        cacheElements();
+        bindEvents();
+        await initStorage();
+        await loadWasm();
+        await loadDeck();
+        updateUI();
     }
 
     function cacheElements() {
@@ -267,31 +262,45 @@ const VocaApp = (() => {
     }
 
     async function loadDeck() {
+        console.log('🔍 Loading deck from storage...');
         currentDeck = await VocaStorage.getDeck();
+        console.log('💾 Current deck from storage:', currentDeck ? `${currentDeck.name} (${currentDeck.words.length} words)` : 'null');
         
         // Auto-load default deck (Day 1) if no deck is loaded
         if (!currentDeck) {
+            console.log('⚠️ No deck in storage, loading default deck...');
             await loadDefaultDeck();
             currentDeck = await VocaStorage.getDeck();
+            console.log('💾 Current deck after default load:', currentDeck ? `${currentDeck.name} (${currentDeck.words.length} words)` : 'still null');
         }
         
         populateDeckSelect();
     }
 
     async function loadDefaultDeck() {
-        const defaultDeck = '1'; // Day 1 as default
+        const defaultDeck = '12'; // Day 12 as default (Day 1 has no meanings)
         try {
+            console.log('🔄 Attempting to load default deck:', defaultDeck);
             const response = await fetch(`words/${defaultDeck}.csv`);
-            if (!response.ok) return;
+            console.log('📡 Fetch response status:', response.status, response.ok);
+            
+            if (!response.ok) {
+                console.warn('❌ Failed to fetch default deck:', response.status, response.statusText);
+                return;
+            }
 
             const text = await response.text();
+            console.log('📄 CSV text length:', text.length);
+            
             const words = VocaStorage.parseCSV(text);
+            console.log('📝 Parsed words count:', words.length);
 
             if (words.length > 0) {
                 await VocaStorage.saveDeck(defaultDeck, words);
+                console.log(`✅ Default deck (Day ${defaultDeck}) loaded automatically`);
             }
         } catch (err) {
-            console.error('Failed to load default deck:', err);
+            console.error('❌ Failed to load default deck:', err);
         }
     }
 
@@ -308,11 +317,6 @@ const VocaApp = (() => {
             option.textContent = `Day ${name}`;
             elements.deckSelect.appendChild(option);
         });
-
-        // Select current deck in dropdown
-        if (currentDeck) {
-            elements.deckSelect.value = currentDeck.name;
-        }
     }
 
     async function handleDeckSelect(e) {
@@ -482,9 +486,9 @@ const VocaApp = (() => {
             VocaTTS.play(prompt.question_text);
         }
 
-        const progress = prompt.progress || { done: 0, total: 0 };
+        const progress = prompt.progress;
         elements.progressText.textContent = `${progress.done}/${progress.total}`;
-        elements.progressFill.style.width = progress.total > 0 ? `${(progress.done / progress.total) * 100}%` : '0%';
+        elements.progressFill.style.width = `${(progress.done / progress.total) * 100}%`;
 
         // Reset input and buttons
         elements.answerInput.value = '';
