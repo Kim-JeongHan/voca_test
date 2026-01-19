@@ -202,19 +202,10 @@ const VocaApp = (() => {
                 }
                 const key = current.word + '|' + current.correct;
                 const wc = wrongCounts[key] || 0;
-                let hint = '';
-                if (wc > 0) {
-                    const letters = current.correct.replace(/[\s,"']/g, '');
-                    if (wc === 1) hint = `Hint: ${'_'.repeat(letters.length)} (${letters.length} 글자)`;
-                    else if (wc === 2) hint = `Hint: ${letters[0]}${'_'.repeat(letters.length - 1)}`;
-                    else if (wc === 3) hint = `Hint: ${letters.substring(0, 2)}${'_'.repeat(letters.length - 2)}`;
-                    else hint = `Hint: ${current.correct} (type it again)`;
-                }
                 return JSON.stringify({
                     question_id: String(current.id),
                     question_text: current.word,
                     direction: 'en_to_kr',
-                    hint,
                     attempt: wc + 1,
                     progress: { done: score, total }
                 });
@@ -439,7 +430,10 @@ const VocaApp = (() => {
 
         // Update UI
         elements.questionText.textContent = prompt.question_text;
-        elements.hintText.textContent = prompt.hint || '';
+        // Show letter count as default hint
+        const correct = currentQuestion.correct || '';
+        const letters = correct.replace(/[\s,"']/g, '');
+        elements.hintText.textContent = `Hint: ${'_'.repeat(letters.length)} (${letters.length} 글자)`;
         updateAttemptInfo();
 
         // TTS: Auto-play on new word (if enabled and unlocked)
@@ -489,19 +483,18 @@ const VocaApp = (() => {
         updateAttemptInfo();
 
         // Generate hint based on hint count
+        // Default (hintCount=0): letter count shown on question load
+        // hintCount=1: first letter + underscores
+        // hintCount>=2: marked as wrong
         if (currentQuestion) {
             const correct = currentQuestion.correct || '';
             const letters = correct.replace(/[\s,"']/g, '');
             let hint = '';
 
             if (hintCount === 1) {
-                hint = `Hint: ${'_'.repeat(letters.length)} (${letters.length} 글자)`;
-            } else if (hintCount === 2) {
                 hint = `Hint: ${letters[0] || ''}${'_'.repeat(Math.max(0, letters.length - 1))}`;
-            } else if (hintCount === 3) {
-                hint = `Hint: ${letters.substring(0, 2)}${'_'.repeat(Math.max(0, letters.length - 2))}`;
             } else {
-                hint = `Hint: ${correct} (type it again)`;
+                hint = `Hint: ${letters.substring(0, 2)}${'_'.repeat(Math.max(0, letters.length - 2))}`;
             }
 
             elements.hintText.textContent = hint;
