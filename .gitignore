@@ -33,3 +33,7 @@
 
 build/
 install/
+
+# Generated vocab test outputs
+words/*_wrong.csv
+words/*_test.csv
