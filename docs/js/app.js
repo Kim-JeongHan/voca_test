@@ -325,6 +325,15 @@ const VocaApp = (() => {
             option.textContent = `Day ${name}`;
             elements.deckSelect.appendChild(option);
         });
+
+        // Select current deck in dropdown
+        if (currentDeck) {
+            elements.deckSelect.value = currentDeck.name;
+            console.log('📋 Dropdown updated to show:', currentDeck.name);
+        } else {
+            elements.deckSelect.value = '';
+            console.log('📋 Dropdown reset (no deck loaded)');
+        }
     }
 
     async function handleDeckSelect(e) {
