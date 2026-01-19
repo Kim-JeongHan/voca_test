@@ -7,5 +7,5 @@ words/
 !words/4.csv
 
 # WASM outputs
-web/wasm/*.js
-web/wasm/*.wasm
+docs/wasm/*.js
+docs/wasm/*.wasm

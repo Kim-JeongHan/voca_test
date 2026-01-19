@@ -481,10 +481,16 @@ cd build && ctest --output-on-failure
 ### Run PWA Locally
 
 ```bash
-cd web
+cd docs
 python3 -m http.server 8080
 # Open http://localhost:8080
 ```
+
+### Deploy to GitHub Pages
+
+1. Push to GitHub
+2. Settings → Pages → Source: `master`, Folder: `/docs`
+3. Access: `https://{username}.github.io/voca_test/`
 
 ---
 
@@ -501,7 +507,7 @@ voca_test/
 ├── tests/
 │   ├── test_session.cpp     # Unit tests
 │   └── test_golden.cpp      # Protocol golden tests
-├── web/
+├── docs/                    # PWA (GitHub Pages)
 │   ├── index.html           # PWA entry
 │   ├── css/style.css        # Mobile-first styles
 │   ├── js/app.js            # Session runner

@@ -6,7 +6,7 @@ set -e
 # Install: https://emscripten.org/docs/getting_started/downloads.html
 
 BUILD_DIR="build_wasm"
-OUTPUT_DIR="web/wasm"
+OUTPUT_DIR="docs/wasm"
 
 echo "=== Building voca_core for WebAssembly ==="
 
