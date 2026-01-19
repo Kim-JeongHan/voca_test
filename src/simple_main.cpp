@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 
     fliename = argv[1];
     number = std::stoi(fliename);
-    filepath = "../words/";
+    filepath = "../docs/words/";
 
     TestVoca test(filepath, number);
 

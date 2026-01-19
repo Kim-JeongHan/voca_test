@@ -26,7 +26,7 @@ int main(int argc, char* argv[])
         filename.push_back(argv[i]);
     }
 
-    filepath = "../words/";
+    filepath = "../docs/words/";
 
     TestVoca test(filepath, filename);
 

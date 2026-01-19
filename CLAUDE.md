@@ -50,7 +50,7 @@ clang-format -i src/*.cpp include/voca_test/*.hpp
 
 - 헤더에 구현 코드 작성 금지 (인라인 제외)
 - `using namespace std;` 전역 사용 금지
-- 하드코딩된 경로 사용 금지 (`../words/` 패턴 유지)
+- 하드코딩된 경로 사용 금지 (`../docs/words/` 패턴 유지)
 
 ## Standards & References
 
@@ -97,7 +97,7 @@ docs/
 │   ├── storage.js   : IndexedDB 저장소 래퍼 (v3: audio 캐시 포함)
 │   └── tts.js       : TTS 모듈 (Dictionary API + ElevenLabs)
 ├── wasm/            : C++ WASM 빌드 출력 (선택적)
-├── words/           : 내장 단어장 CSV 파일
+├── docs/words/      : 단어장 CSV 파일 (GitHub Pages와 C++ 공용)
 ├── manifest.json    : PWA 매니페스트
 └── sw.js            : 서비스 워커 (오프라인 지원)
 ```

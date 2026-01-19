@@ -3,8 +3,8 @@ build_wasm/
 install/
 
 # Generated vocab test outputs
-words/
-!words/4.csv
+docs/words/
+!docs/words/4.csv
 
 # WASM outputs
 docs/wasm/*.js

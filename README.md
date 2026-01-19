@@ -2,6 +2,29 @@
 
 단어 학습용 C++ 프로젝트입니다. CSV 단어장을 읽어 퀴즈/테스트를 수행하는 프로그램을 빌드합니다.
 
+## 📱 PWA (Progressive Web App)
+
+GitHub Pages에 배포된 웹 앱: [https://kim-jeonghan.github.io/voca_test/](https://kim-jeonghan.github.io/voca_test/)
+
+### 🔊 TTS Audio Pre-generation
+
+모든 단어의 발음을 미리 생성하여 빠른 로딩과 오프라인 지원을 제공합니다.
+
+```bash
+# 패키지 설치
+pip install -r requirements.txt
+
+# 오디오 생성 (이미 생성된 파일은 자동 건너뜀)
+python3 generate_audio.py
+
+# GitHub에 업로드
+git add docs/audio/
+git commit -m "Add pre-generated TTS audio files"
+git push
+```
+
+자세한 내용은 [AUDIO_GENERATION.md](AUDIO_GENERATION.md)를 참조하세요.
+
 ## 프로젝트 구조
 - include/voca_test/voca.hpp: 외부 API(Facade)
 - include/voca_test/voca_loader.hpp: CSV 로딩
@@ -17,7 +40,7 @@
 - src/voca_saver.cpp: 저장 구현
 - src/simple_main.cpp: 단일 테스트 실행 예제
 - src/multiple_main.cpp: 여러 단어장 테스트 실행 예제
-- words/: 학습용 CSV 단어장
+- docs/words/: 학습용 CSV 단어장
 
 ## 빌드 방법
 ### 스크립트 사용
@@ -60,7 +83,7 @@ MODE=1 ./run.sh multiple 1 2 3
 ```
 
 ## 단어장 형식
-`words/` 폴더의 CSV 파일을 사용합니다. 각 줄은 `단어,뜻` 형식입니다.
+`docs/words/` 폴더의 CSV 파일을 사용합니다. 각 줄은 `단어,뜻` 형식입니다.
 
 ## 내부 로직 요약
 - [include/voca_test/voca.hpp](include/voca_test/voca.hpp): `TestVoca` Facade
@@ -71,7 +94,7 @@ MODE=1 ./run.sh multiple 1 2 3
 - [include/voca_test/voca_saver.hpp](include/voca_test/voca_saver.hpp): 결과 저장
 
 ### 데이터 로딩
-1. 생성자에서 `../words/` 경로와 파일 번호(또는 파일명 리스트)를 받아 CSV 기본 경로를 구성합니다.
+1. 생성자에서 `../docs/words/` 경로와 파일 번호(또는 파일명 리스트)를 받아 CSV 기본 경로를 구성합니다.
 2. `VocaLoader::loadCSV()`가 각 CSV의 라인을 읽어 `단어,뜻`으로 분리해 저장합니다.
 3. `VocaRepository`에 단어 목록을 보관합니다.
 
