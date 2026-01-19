@@ -7,6 +7,13 @@ const VocaApp = (() => {
     let lastWrongCSV = '';
     let focusMode = false;
 
+    // Available decks (built-in)
+    const BUILTIN_DECKS = [
+        '1', '2', '4', '5', '6', '12', '13', '14', '15', '16',
+        '17', '18', '19', '20', '21', '23', '24', '25', '26', '27',
+        '28', '29', '30', '31', '11_12', '123', '456'
+    ];
+
     // DOM Elements
     const elements = {};
 
@@ -29,6 +36,7 @@ const VocaApp = (() => {
         // Home screen
         elements.deckName = document.getElementById('deck-name');
         elements.deckCount = document.getElementById('deck-count');
+        elements.deckSelect = document.getElementById('deck-select');
         elements.importBtn = document.getElementById('import-btn');
         elements.fileInput = document.getElementById('file-input');
         elements.startAllBtn = document.getElementById('start-all-btn');
@@ -59,6 +67,7 @@ const VocaApp = (() => {
 
     function bindEvents() {
         // Home screen
+        elements.deckSelect.addEventListener('change', handleDeckSelect);
         elements.importBtn.addEventListener('click', () => elements.fileInput.click());
         elements.fileInput.addEventListener('change', handleFileImport);
         elements.startAllBtn.addEventListener('click', () => startSession('all'));
@@ -213,6 +222,47 @@ const VocaApp = (() => {
 
     async function loadDeck() {
         currentDeck = await VocaStorage.getDeck();
+        populateDeckSelect();
+    }
+
+    function populateDeckSelect() {
+        // Clear existing options except the first one
+        while (elements.deckSelect.options.length > 1) {
+            elements.deckSelect.remove(1);
+        }
+
+        // Add built-in decks
+        BUILTIN_DECKS.forEach(name => {
+            const option = document.createElement('option');
+            option.value = name;
+            option.textContent = `Day ${name}`;
+            elements.deckSelect.appendChild(option);
+        });
+    }
+
+    async function handleDeckSelect(e) {
+        const deckName = e.target.value;
+        if (!deckName) return;
+
+        try {
+            const response = await fetch(`words/${deckName}.csv`);
+            if (!response.ok) throw new Error('Failed to fetch deck');
+
+            const text = await response.text();
+            const words = VocaStorage.parseCSV(text);
+
+            if (words.length === 0) {
+                alert('No valid word pairs found in deck');
+                return;
+            }
+
+            await VocaStorage.saveDeck(deckName, words);
+            await loadDeck();
+            updateUI();
+        } catch (err) {
+            console.error('Failed to load deck:', err);
+            alert('Failed to load deck');
+        }
     }
 
     function updateUI() {
