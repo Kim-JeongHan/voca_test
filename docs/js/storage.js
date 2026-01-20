@@ -10,10 +10,18 @@ const VocaStorage = (() => {
 
     let db = null;
 
+    function isDbOpen() {
+        return db && db.objectStoreNames && db.objectStoreNames.length > 0;
+    }
+
     async function init() {
-        if (db) {
+        // Check if db connection is still valid
+        if (isDbOpen()) {
             return db;
         }
+
+        // Reset db if connection was closed
+        db = null;
 
         return new Promise((resolve, reject) => {
             const request = indexedDB.open(DB_NAME, DB_VERSION);
@@ -56,10 +64,10 @@ const VocaStorage = (() => {
                     const audioStore = database.createObjectStore(AUDIO_STORE, { keyPath: 'key' });
                     audioStore.createIndex('timestamp', 'timestamp');
                 }
-                
+
                 // Note: onupgradeneeded completes before onsuccess is called
             };
-            
+
             request.onblocked = () => {
                 console.warn('💾 Storage: Database upgrade blocked - close other tabs');
                 reject(new Error('Database upgrade blocked'));
