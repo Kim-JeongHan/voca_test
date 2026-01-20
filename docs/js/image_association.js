@@ -5,7 +5,7 @@ const VocaImage = (() => {
     // Configuration
     const CONFIG = {
         // Cloudflare Worker URL - UPDATE THIS after deploying the worker
-        workerUrl: '', // e.g., 'https://voca-image-proxy.your-subdomain.workers.dev'
+        workerUrl: 'https://voca-image-proxy.kimjh9813.workers.dev',
 
         // Minimum wrong count before generating image
         minWrongCount: 2,
