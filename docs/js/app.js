@@ -133,25 +133,9 @@ const VocaApp = (() => {
     }
 
     async function loadWasm() {
-        try {
-            // Check if WASM module exists
-            if (typeof createVocaCore === 'function') {
-                vocaCore = await createVocaCore();
-                // Verify WASM functions are properly loaded
-                if (vocaCore && vocaCore.ccall && typeof vocaCore._malloc === 'function') {
-                    console.log('WASM module loaded');
-                } else {
-                    console.warn('WASM module incomplete, using JavaScript fallback');
-                    vocaCore = createJSFallback();
-                }
-            } else {
-                console.warn('WASM module not available, using JavaScript fallback');
-                vocaCore = createJSFallback();
-            }
-        } catch (err) {
-            console.error('Failed to load WASM:', err);
-            vocaCore = createJSFallback();
-        }
+        // Always use JavaScript fallback for now (WASM has issues on GitHub Pages)
+        console.log('Using JavaScript fallback');
+        vocaCore = createJSFallback();
     }
 
     // JavaScript fallback when WASM is not available
