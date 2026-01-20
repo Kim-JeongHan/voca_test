@@ -8,6 +8,7 @@ const VocaApp = (() => {
     let focusMode = false;
     let hintCount = 0;
     let currentQuestion = null;
+    let currentImageUrl = null; // Current association image URL
 
     // Available decks (built-in)
     const BUILTIN_DECKS = [
@@ -64,6 +65,8 @@ const VocaApp = (() => {
         elements.feedbackText = document.getElementById('feedback-text');
         elements.attemptInfo = document.getElementById('attempt-info');
         elements.speakerBtn = document.getElementById('speaker-btn');
+        elements.associationImage = document.getElementById('association-image');
+        elements.imageBtn = document.getElementById('image-btn');
 
         // Summary screen
         elements.scoreValue = document.getElementById('score-value');
@@ -113,6 +116,14 @@ const VocaApp = (() => {
         if (elements.speakerBtn) {
             elements.speakerBtn.addEventListener('click', handleSpeakerClick);
         }
+
+        // Image button (manual trigger for association image)
+        if (elements.imageBtn) {
+            elements.imageBtn.addEventListener('click', handleImageClick);
+        }
+
+        // Listen for async image ready events
+        window.addEventListener('vocaImageReady', handleImageReady);
     }
 
     async function handleClearAudioCache() {
@@ -125,6 +136,66 @@ const VocaApp = (() => {
     function handleSpeakerClick() {
         if (currentQuestion?.word) {
             VocaTTS.play(currentQuestion.word);
+        }
+    }
+
+    async function handleImageClick() {
+        if (!currentQuestion?.word) return;
+        if (!VocaImage.isEnabled()) {
+            console.log('Image generation not configured');
+            return;
+        }
+
+        // Show loading state
+        if (elements.imageBtn) {
+            elements.imageBtn.disabled = true;
+            elements.imageBtn.textContent = '...';
+        }
+
+        try {
+            // Force generate image (manual trigger ignores wrong count threshold)
+            const imageUrl = await VocaImage.requestImage(currentQuestion.word, { forceGenerate: true });
+            if (imageUrl) {
+                showAssociationImage(imageUrl);
+            }
+        } finally {
+            if (elements.imageBtn) {
+                elements.imageBtn.disabled = false;
+                elements.imageBtn.textContent = '🖼️';
+            }
+        }
+    }
+
+    function handleImageReady(event) {
+        const { word, imageUrl } = event.detail;
+        // Only show if still on the same question
+        if (currentQuestion?.word?.toLowerCase() === word.toLowerCase()) {
+            showAssociationImage(imageUrl);
+        }
+    }
+
+    function showAssociationImage(url) {
+        if (!elements.associationImage) return;
+
+        // Revoke previous URL
+        if (currentImageUrl) {
+            VocaImage.revokeImageUrl(currentImageUrl);
+        }
+
+        currentImageUrl = url;
+        elements.associationImage.src = url;
+        elements.associationImage.classList.remove('hidden');
+    }
+
+    function hideAssociationImage() {
+        if (elements.associationImage) {
+            elements.associationImage.classList.add('hidden');
+            elements.associationImage.src = '';
+        }
+
+        if (currentImageUrl) {
+            VocaImage.revokeImageUrl(currentImageUrl);
+            currentImageUrl = null;
         }
     }
 
@@ -437,7 +508,7 @@ const VocaApp = (() => {
         showNextPrompt();
     }
 
-    function showNextPrompt() {
+    async function showNextPrompt() {
         let promptJson;
         if (vocaCore.ccall) {
             const ptr = vocaCore.ccall('voca_session_get_prompt', 'number', ['number'], [session]);
@@ -462,6 +533,9 @@ const VocaApp = (() => {
             correct: findCorrectAnswer(prompt.question_text),
             attempt: prompt.attempt
         };
+
+        // Hide association image for new question
+        hideAssociationImage();
 
         // Update UI
         elements.questionText.textContent = prompt.question_text;
@@ -488,6 +562,11 @@ const VocaApp = (() => {
         elements.hintBtn.disabled = false;
         elements.hintBtn.textContent = 'Hint';
         elements.answerInput.focus();
+
+        // Preload association image if this word qualifies
+        if (VocaImage.isEnabled()) {
+            VocaImage.preloadIfNeeded(prompt.question_text);
+        }
     }
 
     function findCorrectAnswer(word) {
@@ -594,6 +673,16 @@ const VocaApp = (() => {
             if (VocaTTS.isEnabled() && currentQuestion?.word) {
                 setTimeout(() => VocaTTS.play(currentQuestion.word), 300);
             }
+
+            // Record wrong answer and potentially show association image
+            if (VocaImage.isEnabled() && currentQuestion?.word) {
+                VocaImage.recordWrongAnswer(currentQuestion.word).then(({ wrongCount, imageUrl }) => {
+                    // Show cached image immediately if available
+                    if (imageUrl) {
+                        showAssociationImage(imageUrl);
+                    }
+                });
+            }
         }
 
         // Handle next action
@@ -611,7 +700,7 @@ const VocaApp = (() => {
             } else {
                 showNextPrompt();
             }
-        }, feedback.is_correct ? 300 : 1000);
+        }, feedback.is_correct ? 300 : 1500); // Increased delay for wrong to see image
     }
 
     async function showSummary(summary) {

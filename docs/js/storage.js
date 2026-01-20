@@ -1,12 +1,14 @@
 // IndexedDB wrapper for deck and stats storage
 const VocaStorage = (() => {
     const DB_NAME = 'voca_trainer';
-    const DB_VERSION = 3;
+    const DB_VERSION = 4;  // Bumped for IMAGE_STORE and WRONG_STATS_STORE
     const DECK_STORE = 'decks';
     const STATS_STORE = 'stats';
     const WRONG_STORE = 'wrong';
     const SESSION_STORE = 'session';
     const AUDIO_STORE = 'audio';
+    const IMAGE_STORE = 'images';       // Association images cache
+    const WRONG_STATS_STORE = 'wrongStats';  // Persistent wrong counts per word
 
     let db = null;
 
@@ -63,6 +65,17 @@ const VocaStorage = (() => {
                 if (!database.objectStoreNames.contains(AUDIO_STORE)) {
                     const audioStore = database.createObjectStore(AUDIO_STORE, { keyPath: 'key' });
                     audioStore.createIndex('timestamp', 'timestamp');
+                }
+
+                // Image cache store (v4): { word, blob, timestamp }
+                if (!database.objectStoreNames.contains(IMAGE_STORE)) {
+                    const imageStore = database.createObjectStore(IMAGE_STORE, { keyPath: 'word' });
+                    imageStore.createIndex('timestamp', 'timestamp');
+                }
+
+                // Wrong stats store (v4): { word, wrongCount, lastWrong }
+                if (!database.objectStoreNames.contains(WRONG_STATS_STORE)) {
+                    database.createObjectStore(WRONG_STATS_STORE, { keyPath: 'word' });
                 }
 
                 // Note: onupgradeneeded completes before onsuccess is called
@@ -317,6 +330,128 @@ const VocaStorage = (() => {
         });
     }
 
+    // ==================== Image Cache Functions ====================
+
+    async function saveImageBlob(word, blob) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IMAGE_STORE, 'readwrite');
+            const store = tx.objectStore(IMAGE_STORE);
+            const request = store.put({
+                word: word.toLowerCase(),
+                blob,
+                timestamp: Date.now()
+            });
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getImageBlob(word) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IMAGE_STORE, 'readonly');
+            const store = tx.objectStore(IMAGE_STORE);
+            const request = store.get(word.toLowerCase());
+            request.onsuccess = () => {
+                const result = request.result;
+                resolve(result ? result.blob : null);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function hasImage(word) {
+        const blob = await getImageBlob(word);
+        return blob !== null;
+    }
+
+    async function clearImageCache() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IMAGE_STORE, 'readwrite');
+            const store = tx.objectStore(IMAGE_STORE);
+            const request = store.clear();
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getImageCacheStats() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(IMAGE_STORE, 'readonly');
+            const store = tx.objectStore(IMAGE_STORE);
+            const countReq = store.count();
+            countReq.onsuccess = () => {
+                resolve({ count: countReq.result });
+            };
+            countReq.onerror = () => reject(countReq.error);
+        });
+    }
+
+    // ==================== Wrong Stats Functions ====================
+
+    async function incrementWrongCount(word) {
+        await init();
+        const normalizedWord = word.toLowerCase();
+
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(WRONG_STATS_STORE, 'readwrite');
+            const store = tx.objectStore(WRONG_STATS_STORE);
+            const getReq = store.get(normalizedWord);
+
+            getReq.onsuccess = () => {
+                const existing = getReq.result;
+                const newCount = existing ? existing.wrongCount + 1 : 1;
+                const putReq = store.put({
+                    word: normalizedWord,
+                    wrongCount: newCount,
+                    lastWrong: Date.now()
+                });
+                putReq.onsuccess = () => resolve(newCount);
+                putReq.onerror = () => reject(putReq.error);
+            };
+            getReq.onerror = () => reject(getReq.error);
+        });
+    }
+
+    async function getWrongCount(word) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(WRONG_STATS_STORE, 'readonly');
+            const store = tx.objectStore(WRONG_STATS_STORE);
+            const request = store.get(word.toLowerCase());
+            request.onsuccess = () => {
+                const result = request.result;
+                resolve(result ? result.wrongCount : 0);
+            };
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function resetWrongCount(word) {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(WRONG_STATS_STORE, 'readwrite');
+            const store = tx.objectStore(WRONG_STATS_STORE);
+            const request = store.delete(word.toLowerCase());
+            request.onsuccess = () => resolve();
+            request.onerror = () => reject(request.error);
+        });
+    }
+
+    async function getAllWrongStats() {
+        await init();
+        return new Promise((resolve, reject) => {
+            const tx = db.transaction(WRONG_STATS_STORE, 'readonly');
+            const store = tx.objectStore(WRONG_STATS_STORE);
+            const request = store.getAll();
+            request.onsuccess = () => resolve(request.result);
+            request.onerror = () => reject(request.error);
+        });
+    }
+
     return {
         init,
         saveDeck,
@@ -332,6 +467,18 @@ const VocaStorage = (() => {
         clearAudioCache,
         getAudioCacheStats,
         pruneAudioCache,
+        // Image cache
+        saveImageBlob,
+        getImageBlob,
+        hasImage,
+        clearImageCache,
+        getImageCacheStats,
+        // Wrong stats
+        incrementWrongCount,
+        getWrongCount,
+        resetWrongCount,
+        getAllWrongStats,
+        // Utils
         parseCSV,
         toCSV,
         downloadFile

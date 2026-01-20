@@ -99,14 +99,15 @@ docs/
 ├── css/style.css    : 스타일시트
 ├── js/
 │   ├── app.js       : 메인 애플리케이션 로직
-│   ├── storage.js   : IndexedDB 저장소 래퍼 (v3: audio 캐시 포함)
-│   └── tts.js       : TTS 모듈 (Dictionary API + ElevenLabs)
+│   ├── storage.js   : IndexedDB 저장소 래퍼 (v4: image 캐시, wrong stats 포함)
+│   ├── tts.js       : TTS 모듈 (Dictionary API + ElevenLabs)
+│   └── image_association.js : 연상 이미지 모듈 (HuggingFace SD API)
 ├── audio/           : Pre-generated TTS 오디오 파일
 ├── icons/           : PWA 아이콘 (icon.svg, icon-192.png, icon-512.png)
 ├── wasm/            : C++ WASM 빌드 출력 (선택적)
 ├── words/           : 단어장 CSV 파일 (GitHub Pages와 C++ 공용)
 ├── manifest.json    : PWA 매니페스트
-└── sw.js            : 서비스 워커 (오프라인 지원, 현재 v7)
+└── sw.js            : 서비스 워커 (오프라인 지원, 현재 v8)
 ```
 
 ### 주요 기능
@@ -116,6 +117,7 @@ docs/
 - **Save & Quit**: 세션 저장 후 종료
 - **Wrong Only**: 오답만 재학습
 - **TTS 발음**: 단어 표시/오답 시 발음 재생 (스피커 버튼으로 수동 재생 가능)
+- **연상 이미지**: 오답 2회 이상 시 AI 생성 연상 이미지 표시 (이미지 버튼으로 수동 생성 가능)
 
 ### 수정 시 주의
 
@@ -123,6 +125,7 @@ docs/
 - `storage.js`의 DB_VERSION 변경 시 onupgradeneeded 핸들러 확인
 - CSS는 모바일 우선 반응형 디자인
 - `tts.js`의 workerUrl은 배포된 Cloudflare Worker URL로 설정 필요
+- `image_association.js`의 workerUrl은 배포된 Image Worker URL로 설정 필요
 - `sw.js`의 CACHE_NAME 버전은 에셋 변경 시 증가 필요
 
 ## Cloudflare Worker (cloudflare-worker/)
@@ -155,6 +158,45 @@ cloudflare-worker/
 - voice_id는 서버에서 고정 (클라이언트 변경 불가)
 - 텍스트 길이 제한 (100자)
 - 8초 타임아웃
+- Content-Type 검증
+
+## Cloudflare Worker - Image (cloudflare-worker-image/)
+
+HuggingFace Stable Diffusion API 프록시. 연상 이미지 생성용.
+
+### 배포
+
+```bash
+cd cloudflare-worker-image
+npm install -g wrangler
+wrangler login
+wrangler secret put HUGGINGFACE_API_KEY  # HuggingFace API 토큰 입력
+wrangler deploy
+```
+
+배포 후 URL을 `docs/js/image_association.js`의 `CONFIG.workerUrl`에 설정.
+
+### 구조
+
+```
+cloudflare-worker-image/
+├── src/index.js     : Worker 코드 (프롬프트 빌드, 타임아웃, CORS)
+├── wrangler.toml    : 배포 설정
+└── README.md        : 배포 가이드
+```
+
+### 이미지 생성 정책
+
+- 같은 단어에 대해 **오답 2회 이상** 시 자동 생성
+- 또는 사용자가 수동으로 이미지 버튼 클릭 시
+- 단어당 **1회만** 생성 (이후 캐시 사용)
+- 프롬프트: "Surreal educational illustration... No text, no letters..."
+
+### 보안
+
+- API 키는 서버에서만 사용
+- 단어 길이 제한 (50자)
+- 30초 타임아웃
 - Content-Type 검증
 
 ## Audio Generation

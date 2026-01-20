@@ -82,8 +82,10 @@
                                 <path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/>
                             </svg>
                         </button>
+                        <button id="image-btn" class="btn-icon" title="Show association image">🖼️</button>
                     </div>
                     <div id="hint-text"></div>
+                    <img id="association-image" class="hidden" alt="Association image">
                 </div>
                 <div id="answer-area">
                     <input type="text" id="answer-input" placeholder="Type your answer..." autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false">
@@ -130,6 +132,7 @@
     <script src="wasm/voca_core.js" onerror="console.warn('WASM not available, will use JS fallback')"></script>
     <script src="js/storage.js"></script>
     <script src="js/tts.js"></script>
+    <script src="js/image_association.js"></script>
     <script src="js/app.js"></script>
     <script>
         // Register service worker for offline support
