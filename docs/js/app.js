@@ -265,15 +265,15 @@ const VocaApp = (() => {
         console.log('🔍 Loading deck from storage...');
         currentDeck = await VocaStorage.getDeck();
         console.log('💾 Current deck from storage:', currentDeck ? `${currentDeck.name} (${currentDeck.words.length} words)` : 'null');
-        
-        // Auto-load default deck (Day 1) if no deck is loaded
-        if (!currentDeck) {
-            console.log('⚠️ No deck in storage, loading default deck...');
+
+        // Auto-load default deck if no deck or empty words (corrupted data fix)
+        if (!currentDeck || !currentDeck.words || currentDeck.words.length === 0) {
+            console.log('⚠️ No deck or empty words in storage, loading default deck...');
             await loadDefaultDeck();
             currentDeck = await VocaStorage.getDeck();
             console.log('💾 Current deck after default load:', currentDeck ? `${currentDeck.name} (${currentDeck.words.length} words)` : 'still null');
         }
-        
+
         populateDeckSelect();
     }
 
@@ -283,7 +283,7 @@ const VocaApp = (() => {
             console.log('🔄 Attempting to load default deck:', defaultDeck);
             const response = await fetch(`words/${defaultDeck}.csv`);
             console.log('📡 Fetch response status:', response.status, response.ok);
-            
+
             if (!response.ok) {
                 console.warn('❌ Failed to fetch default deck:', response.status, response.statusText);
                 return;
@@ -291,7 +291,7 @@ const VocaApp = (() => {
 
             const text = await response.text();
             console.log('📄 CSV text length:', text.length);
-            
+
             const words = VocaStorage.parseCSV(text);
             console.log('📝 Parsed words count:', words.length);
 
