@@ -8,7 +8,7 @@
 
 // Stable Diffusion model on HuggingFace (free tier compatible)
 const MODEL_ID = 'runwayml/stable-diffusion-v1-5';
-const API_URL = `https://api-inference.huggingface.co/models/${MODEL_ID}`;
+const API_URL = `https://router.huggingface.co/models/${MODEL_ID}`;
 const MAX_WORD_LENGTH = 50;
 const API_TIMEOUT_MS = 30000; // 30 seconds for image generation
 
