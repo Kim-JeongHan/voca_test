@@ -1,11 +1,18 @@
 // Association Image Module for Vocabulary Learning
 // Generates and caches association images using HuggingFace Stable Diffusion API
+// Automatically commits generated images to GitHub for persistence
 
 const VocaImage = (() => {
     // Configuration
     const CONFIG = {
-        // Cloudflare Worker URL - UPDATE THIS after deploying the worker
+        // Cloudflare Worker URL for image generation
         workerUrl: 'https://voca-image-proxy.kimjh9813.workers.dev',
+
+        // Cloudflare Worker URL for GitHub commits
+        githubWorkerUrl: 'https://voca-github-proxy.kimjh9813.workers.dev',
+
+        // GitHub raw URL base for checking existing images
+        githubRawBase: 'https://raw.githubusercontent.com/kim-jeonghan/voca_test/master/docs/images',
 
         // Minimum wrong count before generating image
         minWrongCount: 2,
@@ -38,11 +45,42 @@ const VocaImage = (() => {
     }
 
     /**
-     * Set the Worker URL
+     * Set the Worker URLs
      */
     function setWorkerUrl(url) {
         CONFIG.workerUrl = url;
         console.log(`🖼️ Image: Worker URL set to ${url}`);
+    }
+
+    function setGithubWorkerUrl(url) {
+        CONFIG.githubWorkerUrl = url;
+        console.log(`🖼️ Image: GitHub Worker URL set to ${url}`);
+    }
+
+    /**
+     * Normalize word for file naming
+     */
+    function normalizeWord(word) {
+        return word.toLowerCase().trim().replace(/[^a-z0-9-]/g, '_');
+    }
+
+    /**
+     * Check if image exists on GitHub
+     */
+    async function checkGitHubImage(word) {
+        const normalized = normalizeWord(word);
+        const url = `${CONFIG.githubRawBase}/${normalized}.png`;
+
+        try {
+            const response = await fetch(url, { method: 'HEAD' });
+            if (response.ok) {
+                console.log(`🖼️ Image: Found on GitHub for "${word}"`);
+                return url;
+            }
+        } catch (e) {
+            // Image doesn't exist on GitHub
+        }
+        return null;
     }
 
     /**
@@ -53,9 +91,13 @@ const VocaImage = (() => {
     async function shouldGenerateImage(word) {
         if (!isEnabled()) return false;
 
-        // Check if image already exists
+        // Check if image already exists in local cache
         const hasExisting = await VocaStorage.hasImage(word);
         if (hasExisting) return false;
+
+        // Check if image exists on GitHub
+        const githubUrl = await checkGitHubImage(word);
+        if (githubUrl) return false;
 
         // Check wrong count
         const wrongCount = await VocaStorage.getWrongCount(word);
@@ -69,16 +111,33 @@ const VocaImage = (() => {
      * @param {string} word - The English word
      * @param {object} options - Options
      * @param {boolean} options.forceGenerate - Force generation even if wrong count < threshold
-     * @returns {Promise<string|null>} - Object URL for the image, or null on failure
+     * @returns {Promise<string|null>} - URL for the image, or null on failure
      */
     async function requestImage(word, options = {}) {
         const normalizedWord = word.toLowerCase().trim();
 
-        // Check cache first
+        // Check local cache first
         const cached = await VocaStorage.getImageBlob(normalizedWord);
         if (cached) {
-            console.log(`🖼️ Image: Cache hit for "${normalizedWord}"`);
+            console.log(`🖼️ Image: Local cache hit for "${normalizedWord}"`);
             return URL.createObjectURL(cached);
+        }
+
+        // Check GitHub for existing image
+        const githubUrl = await checkGitHubImage(normalizedWord);
+        if (githubUrl) {
+            // Download and cache locally for offline use
+            try {
+                const response = await fetch(githubUrl);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    await VocaStorage.saveImageBlob(normalizedWord, blob);
+                    return URL.createObjectURL(blob);
+                }
+            } catch (e) {
+                // Return GitHub URL directly if download fails
+                return githubUrl;
+            }
         }
 
         // Check if we should generate
@@ -158,9 +217,12 @@ const VocaImage = (() => {
             // Get image blob
             const blob = await response.blob();
 
-            // Save to cache
+            // Save to local cache
             await VocaStorage.saveImageBlob(word, blob);
-            console.log(`🖼️ Image: Generated and cached for "${word}"`);
+            console.log(`🖼️ Image: Generated and cached locally for "${word}"`);
+
+            // Commit to GitHub in background (don't block)
+            commitToGitHub(word, blob);
 
             // Return object URL
             return URL.createObjectURL(blob);
@@ -176,17 +238,63 @@ const VocaImage = (() => {
     }
 
     /**
+     * Commit image to GitHub via Worker
+     * @param {string} word - The word
+     * @param {Blob} blob - The image blob
+     */
+    async function commitToGitHub(word, blob) {
+        if (!CONFIG.githubWorkerUrl) {
+            console.log('🖼️ Image: GitHub worker not configured, skipping commit');
+            return;
+        }
+
+        try {
+            // Convert blob to base64
+            const arrayBuffer = await blob.arrayBuffer();
+            const base64 = btoa(
+                new Uint8Array(arrayBuffer).reduce((data, byte) => data + String.fromCharCode(byte), '')
+            );
+
+            const response = await fetch(CONFIG.githubWorkerUrl, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    word: word,
+                    imageBase64: base64,
+                }),
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log(`🖼️ Image: Committed to GitHub: ${result.path}`);
+            } else {
+                const error = await response.json().catch(() => ({}));
+                console.warn(`🖼️ Image: GitHub commit failed - ${error.error || response.statusText}`);
+            }
+        } catch (error) {
+            console.warn('🖼️ Image: GitHub commit error:', error);
+        }
+    }
+
+    /**
      * Get cached image URL for a word (if exists)
      * @param {string} word - The English word
      * @returns {Promise<string|null>} - Object URL or null
      */
     async function getCachedImage(word) {
         const normalizedWord = word.toLowerCase().trim();
+
+        // Check local cache first
         const blob = await VocaStorage.getImageBlob(normalizedWord);
         if (blob) {
             return URL.createObjectURL(blob);
         }
-        return null;
+
+        // Check GitHub
+        const githubUrl = await checkGitHubImage(normalizedWord);
+        return githubUrl;
     }
 
     /**
@@ -204,20 +312,30 @@ const VocaImage = (() => {
         // Check if we should generate image
         let imageUrl = null;
         if (wrongCount >= CONFIG.minWrongCount) {
-            // Check if already cached
+            // Check local cache first
             const cached = await VocaStorage.getImageBlob(normalizedWord);
             if (cached) {
                 imageUrl = URL.createObjectURL(cached);
             } else {
-                // Generate in background (don't await to not block UI)
-                generateImage(normalizedWord).then(url => {
-                    if (url) {
-                        // Notify that image is ready (dispatch custom event)
-                        window.dispatchEvent(new CustomEvent('vocaImageReady', {
-                            detail: { word: normalizedWord, imageUrl: url }
-                        }));
-                    }
-                });
+                // Check GitHub
+                const githubUrl = await checkGitHubImage(normalizedWord);
+                if (githubUrl) {
+                    imageUrl = githubUrl;
+                    // Cache locally in background
+                    fetch(githubUrl).then(r => r.blob()).then(blob => {
+                        VocaStorage.saveImageBlob(normalizedWord, blob);
+                    }).catch(() => {});
+                } else {
+                    // Generate in background (don't await to not block UI)
+                    generateImage(normalizedWord).then(url => {
+                        if (url) {
+                            // Notify that image is ready (dispatch custom event)
+                            window.dispatchEvent(new CustomEvent('vocaImageReady', {
+                                detail: { word: normalizedWord, imageUrl: url }
+                            }));
+                        }
+                    });
+                }
             }
         }
 
@@ -235,9 +353,24 @@ const VocaImage = (() => {
         const wrongCount = await VocaStorage.getWrongCount(normalizedWord);
         if (wrongCount < CONFIG.minWrongCount) return;
 
-        // Check if already cached
+        // Check if already cached locally
         const cached = await VocaStorage.hasImage(normalizedWord);
         if (cached) return;
+
+        // Check if on GitHub and cache it
+        const githubUrl = await checkGitHubImage(normalizedWord);
+        if (githubUrl) {
+            try {
+                const response = await fetch(githubUrl);
+                if (response.ok) {
+                    const blob = await response.blob();
+                    await VocaStorage.saveImageBlob(normalizedWord, blob);
+                }
+            } catch (e) {
+                // Ignore errors
+            }
+            return;
+        }
 
         // Generate in background
         generateImage(normalizedWord);
@@ -280,6 +413,7 @@ const VocaImage = (() => {
         isEnabled,
         setEnabled,
         setWorkerUrl,
+        setGithubWorkerUrl,
         requestImage,
         getCachedImage,
         recordWrongAnswer,
@@ -288,5 +422,6 @@ const VocaImage = (() => {
         clearCache,
         revokeImageUrl,
         shouldGenerateImage,
+        checkGitHubImage,
     };
 })();
