@@ -19,9 +19,9 @@ bool VocaTestEngine::isCorrect(const std::string& answer, const std::string& cor
             return true;
         }
 
-        for (const auto& and : answers) {
+        for (const auto& answer : answers) {
             for (const auto& resp : responses) {
-                if (and == resp) {
+                if (answer == resp) {
                     return true;
                 }
             }
