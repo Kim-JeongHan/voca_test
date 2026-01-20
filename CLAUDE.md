@@ -29,6 +29,10 @@ pre-commit run -a
 
 # Format check
 clang-format -i src/*.cpp include/voca_test/*.hpp
+
+# Generate TTS audio for word decks
+pip install -r requirements.txt
+python3 generate_audio.py
 ```
 
 ## Golden Rules
@@ -62,7 +66,8 @@ clang-format -i src/*.cpp include/voca_test/*.hpp
 
 ### Git Convention
 
-- Commit prefix: `:sparkles:` (feature), `:bug:` (fix), `:recycle:` (refactor)
+- Commit format: `{Type}: {Message}` 또는 `:{emoji}: {message}`
+- Type/Emoji: `Fix:` or `:bug:` (fix), `:sparkles:` (feature), `:recycle:` (refactor)
 - Branch: feature/*, bugfix/*, refactor/*
 
 ### Maintenance Policy
@@ -76,7 +81,7 @@ TestVoca (Facade)
     |
     +-- VocaLoader      : CSV 파일 로딩
     +-- VocaRepository  : 단어 데이터 저장소
-    +-- VocaEngine      : 채점 로직
+    +-- VocaTestEngine  : 채점 로직
     +-- VocaResult      : 점수/오답 관리
     +-- VocaSaver       : 결과 저장
     +-- VocaSession     : 세션 상태 관리
@@ -96,10 +101,12 @@ docs/
 │   ├── app.js       : 메인 애플리케이션 로직
 │   ├── storage.js   : IndexedDB 저장소 래퍼 (v3: audio 캐시 포함)
 │   └── tts.js       : TTS 모듈 (Dictionary API + ElevenLabs)
+├── audio/           : Pre-generated TTS 오디오 파일
+├── icons/           : PWA 아이콘 (icon.svg, icon-192.png, icon-512.png)
 ├── wasm/            : C++ WASM 빌드 출력 (선택적)
-├── docs/words/      : 단어장 CSV 파일 (GitHub Pages와 C++ 공용)
+├── words/           : 단어장 CSV 파일 (GitHub Pages와 C++ 공용)
 ├── manifest.json    : PWA 매니페스트
-└── sw.js            : 서비스 워커 (오프라인 지원)
+└── sw.js            : 서비스 워커 (오프라인 지원, 현재 v7)
 ```
 
 ### 주요 기능
@@ -116,6 +123,7 @@ docs/
 - `storage.js`의 DB_VERSION 변경 시 onupgradeneeded 핸들러 확인
 - CSS는 모바일 우선 반응형 디자인
 - `tts.js`의 workerUrl은 배포된 Cloudflare Worker URL로 설정 필요
+- `sw.js`의 CACHE_NAME 버전은 에셋 변경 시 증가 필요
 
 ## Cloudflare Worker (cloudflare-worker/)
 
@@ -148,6 +156,17 @@ cloudflare-worker/
 - 텍스트 길이 제한 (100자)
 - 8초 타임아웃
 - Content-Type 검증
+
+## Audio Generation
+
+TTS 오디오 사전 생성을 위한 Python 스크립트.
+
+```
+generate_audio.py    : ElevenLabs API를 통한 오디오 생성
+requirements.txt     : Python 의존성 (requests, tqdm)
+```
+
+생성된 오디오는 `docs/audio/`에 저장되며, 오프라인 사용을 위해 캐싱됨.
 
 ## Context Map
 
