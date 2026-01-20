@@ -1,7 +1,7 @@
 // Voca Trainer Service Worker
 // Provides offline caching for PWA functionality
 
-const CACHE_NAME = 'voca-trainer-v4';
+const CACHE_NAME = 'voca-trainer-v5';
 const STATIC_ASSETS = [
     './',
     './index.html',
@@ -85,8 +85,11 @@ self.addEventListener('fetch', (event) => {
             fetch(request)
                 .then((response) => {
                     if (response.ok) {
-                        const cache = caches.open(CACHE_NAME);
-                        cache.then(c => c.put(request, response.clone()));
+                        // Clone BEFORE using the response
+                        const responseClone = response.clone();
+                        caches.open(CACHE_NAME).then(cache => {
+                            cache.put(request, responseClone);
+                        });
                     }
                     return response;
                 })

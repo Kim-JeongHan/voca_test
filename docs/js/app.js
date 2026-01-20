@@ -137,7 +137,13 @@ const VocaApp = (() => {
             // Check if WASM module exists
             if (typeof createVocaCore === 'function') {
                 vocaCore = await createVocaCore();
-                console.log('WASM module loaded');
+                // Verify WASM functions are properly loaded
+                if (vocaCore && vocaCore.ccall && typeof vocaCore._malloc === 'function') {
+                    console.log('WASM module loaded');
+                } else {
+                    console.warn('WASM module incomplete, using JavaScript fallback');
+                    vocaCore = createJSFallback();
+                }
             } else {
                 console.warn('WASM module not available, using JavaScript fallback');
                 vocaCore = createJSFallback();
