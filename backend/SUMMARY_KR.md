@@ -88,26 +88,39 @@ TTS API:
 
 ## 🚀 바로 실행 가능
 
-### 로컬 개발 (Python)
+### 로컬 개발 (Python - uv 추천)
 
 ```bash
-# 1. 의존성 설치
-cd backend
-pip install -r requirements.txt
+# 1. uv 설치 (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
 
-# 2. 환경 변수 설정
+# 2. 의존성 동기화
+cd backend
+uv sync
+
+# 3. 환경 변수 설정
 cp .env.example .env
 # .env 파일에 API 키 입력
 
-# 3. DB 초기화
-python init_db.py --sample
+# 4. DB 초기화
+uv run python init_db.py --sample
 
-# 4. 서버 시작
-uvicorn app.main:app --reload
+# 5. 서버 시작
+uv run uvicorn app.main:app --reload
 
-# 5. 접속
+# 6. 접속
 # API: http://localhost:8000
 # Docs: http://localhost:8000/docs
+```
+
+### 로컬 개발 (Python - pip)
+
+```bash
+cd backend
+pip install -r requirements.txt
+cp .env.example .env
+python init_db.py --sample
+uvicorn app.main:app --reload
 ```
 
 ### Docker Compose (추천)

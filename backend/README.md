@@ -34,15 +34,25 @@ FastAPI Backend
 
 ### Local Development (Python)
 
-1. **Create virtual environment**
+**Option 1: Using uv (Recommended)**
+```bash
+cd backend
+
+# Install uv (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 의존성 동기화 (자동으로 Python 설치 및 가상환경 생성)
+uv sync
+
+# 가상환경 활성화
+source .venv/bin/activate  # On Windows: .venv\Scripts\activate
+```
+
+**Option 2: Using pip**
 ```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
-```
-
-2. **Install dependencies**
-```bash
 pip install -r requirements.txt
 ```
 
@@ -177,6 +187,10 @@ The backend uses a Python fallback by default. To use the C++ engine via pybind1
 
 1. **Install dependencies**
 ```bash
+# Using uv
+uv add pybind11
+
+# Or using pip
 pip install pybind11
 ```
 
@@ -307,6 +321,12 @@ engine = VocaTestEngine()
 
 Follow PEP 8. Use formatters:
 ```bash
+# Using uv
+uv add --dev black isort
+uv run black app/
+uv run isort app/
+
+# Or using pip
 pip install black isort
 black app/
 isort app/

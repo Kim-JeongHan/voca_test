@@ -31,8 +31,8 @@ pre-commit run -a
 clang-format -i src/*.cpp include/voca_test/*.hpp
 
 # Generate TTS audio for word decks
-pip install -r requirements.txt
-python3 generate_audio.py
+uv sync
+uv run generate_audio.py
 ```
 
 ## Golden Rules
@@ -205,10 +205,24 @@ TTS 오디오 사전 생성을 위한 Python 스크립트.
 
 ```
 generate_audio.py    : ElevenLabs API를 통한 오디오 생성
-requirements.txt     : Python 의존성 (requests, tqdm)
+pyproject.toml       : uv 프로젝트 설정 (Python 의존성 정의)
+.python-version      : Python 버전 관리 (uv 자동 설치)
 ```
 
 생성된 오디오는 `docs/audio/`에 저장되며, 오프라인 사용을 위해 캐싱됨.
+
+### 환경 설정
+
+```bash
+# uv 설치 (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 의존성 동기화 (자동으로 Python 설치 및 가상환경 생성)
+uv sync
+
+# TTS 오디오 생성 실행
+uv run generate_audio.py
+```
 
 ## Context Map
 

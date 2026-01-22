@@ -128,6 +128,14 @@ tests/
 ## 🚀 테스트 실행 방법
 
 ### 기본 실행
+
+**Using uv:**
+```bash
+cd backend
+uv run pytest
+```
+
+**Using pip/venv:**
 ```bash
 cd backend
 pytest
@@ -136,21 +144,26 @@ pytest
 ### 카테고리별 실행
 ```bash
 # 유닛 테스트만 (빠름)
-pytest -m unit
+uv run pytest -m unit
 
 # 통합 테스트
-pytest -m integration
+uv run pytest -m integration
 
 # API 테스트
-pytest -m api
+uv run pytest -m api
 
 # 외부 API 제외
-pytest -m "not external"
+uv run pytest -m "not external"
 ```
 
 ### 커버리지 리포트
 ```bash
+# Using uv
+uv run pytest --cov=app --cov-report=html
+
+# Using pip/venv
 pytest --cov=app --cov-report=html
+
 # 리포트 확인: open htmlcov/index.html
 ```
 
@@ -294,14 +307,18 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: '3.11'
+      - name: Install uv
+        run: |
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.cargo/bin" >> $GITHUB_PATH
       - name: Install dependencies
         run: |
           cd backend
-          pip install -r requirements.txt
+          uv sync
       - name: Run tests
         run: |
           cd backend
-          pytest -m "not external" --cov=app
+          uv run pytest -m "not external" --cov=app
 ```
 
 ## 📚 다음 단계

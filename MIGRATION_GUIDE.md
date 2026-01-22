@@ -54,6 +54,19 @@ All backend infrastructure is ready:
 ### Phase 2: Database Initialization
 
 1. **Install dependencies**
+
+**Using uv (Recommended):**
+```bash
+cd backend
+
+# Install uv (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 의존성 동기화
+uv sync
+```
+
+**Using pip:**
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -67,12 +80,21 @@ cp .env.example .env
 
 3. **Initialize database**
 ```bash
+# Using uv
+uv run python init_db.py --sample
+
+# Using pip
 python init_db.py --sample
 ```
 
 4. **Verify setup**
 ```bash
+# Using uv
+uv run uvicorn app.main:app --reload
+
+# Using pip
 uvicorn app.main:app --reload
+
 # Visit: http://localhost:8000/docs
 ```
 
@@ -463,6 +485,11 @@ const API_BASE = 'https://your-api.railway.app/api/v1'; // Prod
 ```bash
 # Reset database
 rm backend/voca.db
+
+# Using uv
+cd backend && uv run python init_db.py --sample
+
+# Using pip
 python backend/init_db.py --sample
 ```
 

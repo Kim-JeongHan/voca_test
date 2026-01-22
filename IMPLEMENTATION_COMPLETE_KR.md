@@ -67,7 +67,19 @@ docker-compose up -d
 # 접속: http://localhost:8000/docs
 ```
 
-### 방법 2: Python 직접 실행
+### 방법 2: Python 직접 실행 (uv)
+```bash
+# uv 설치 (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+cd backend
+uv sync
+uv run python init_db.py --sample
+uv run uvicorn app.main:app --reload
+# 접속: http://localhost:8000/docs
+```
+
+### 방법 3: Python 직접 실행 (pip)
 ```bash
 cd backend
 pip install -r requirements.txt
@@ -161,15 +173,25 @@ backend/
 ## 🔧 테스트 방법
 
 ### 1. 로컬 테스트
+
+**Using uv:**
 ```bash
 # 백엔드 시작
+cd backend
+uv sync
+uv run python init_db.py --sample
+uv run uvicorn app.main:app --reload
+
+# Swagger UI 접속
+# http://localhost:8000/docs
+```
+
+**Using pip:**
+```bash
 cd backend
 pip install -r requirements.txt
 python init_db.py --sample
 uvicorn app.main:app --reload
-
-# Swagger UI 접속
-# http://localhost:8000/docs
 ```
 
 ### 2. API 테스트 (cURL)
@@ -250,12 +272,12 @@ A: Railway 무료 티어로 시작 가능하며, SQLite 사용 시 VPS 없이도
 
 ## 🎉 다음 단계
 
-1. **지금 바로 테스트**
+1. **지금 바로 테스트 (uv)**
    ```bash
    cd backend
-   pip install -r requirements.txt
-   python init_db.py --sample
-   uvicorn app.main:app --reload
+   uv sync
+   uv run python init_db.py --sample
+   uv run uvicorn app.main:app --reload
    ```
 
 2. **Swagger UI에서 API 체험**

@@ -11,11 +11,14 @@ GitHub Pages에 배포된 웹 앱: [https://kim-jeonghan.github.io/voca_test/](h
 모든 단어의 발음을 미리 생성하여 빠른 로딩과 오프라인 지원을 제공합니다.
 
 ```bash
-# 패키지 설치
-pip install -r requirements.txt
+# uv 설치 (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 의존성 동기화 (자동으로 Python 설치 및 가상환경 생성)
+uv sync
 
 # 오디오 생성 (이미 생성된 파일은 자동 건너뜀)
-python3 generate_audio.py
+uv run generate_audio.py
 
 # GitHub에 업로드
 git add docs/audio/

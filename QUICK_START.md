@@ -22,26 +22,39 @@ docker-compose up -d
 
 ### Option 2: Python 로컬 실행
 
+**Using uv (Recommended):**
 ```bash
-# 1. 가상환경 생성
+# 1. uv 설치 (한 번만)
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# 2. 프로젝트 이동
+cd backend
+
+# 3. 의존성 동기화 (자동으로 Python 설치 및 가상환경 생성)
+uv sync
+
+# 4. 환경 설정
+cp .env.example .env
+
+# 5. DB 초기화 (샘플 데이터 포함)
+uv run python init_db.py --sample
+
+# 6. 서버 시작
+uv run uvicorn app.main:app --reload
+
+# 7. 접속
+# http://localhost:8000/docs
+```
+
+**Using pip:**
+```bash
 cd backend
 python -m venv venv
 source venv/bin/activate  # Windows: venv\Scripts\activate
-
-# 2. 의존성 설치
 pip install -r requirements.txt
-
-# 3. 환경 설정
 cp .env.example .env
-
-# 4. DB 초기화 (샘플 데이터 포함)
 python init_db.py --sample
-
-# 5. 서버 시작
 uvicorn app.main:app --reload
-
-# 6. 접속
-# http://localhost:8000/docs
 ```
 
 ## 📚 첫 API 호출

@@ -1,0 +1,12 @@
+[project]
+name = "voca-test"
+version = "1.0.0"
+description = "TTS audio generation for vocabulary test application"
+requires-python = ">=3.8"
+dependencies = [
+    "requests>=2.31.0",
+    "tqdm>=4.66.0",
+]
+
+[dependency-groups]
+dev = []

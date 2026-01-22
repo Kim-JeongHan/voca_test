@@ -19,21 +19,40 @@ tests/
 
 ### Install Test Dependencies
 
+**Using uv (Recommended):**
+```bash
+cd backend
+uv sync
+```
+
+**Using pip:**
 ```bash
 pip install -r requirements.txt
 ```
 
 ### Run All Tests
 
+**Using uv:**
+```bash
+uv run pytest
+```
+
+**Using pip/venv:**
 ```bash
 pytest
 ```
 
 ### Run with Coverage
 
+**Using uv:**
+```bash
+uv run pytest --cov=app --cov-report=html
+# View coverage report: open htmlcov/index.html
+```
+
+**Using pip/venv:**
 ```bash
 pytest --cov=app --cov-report=html
-# View coverage report: open htmlcov/index.html
 ```
 
 ### Run Specific Test Categories
@@ -363,15 +382,16 @@ async def test_async_function():
 
 ## Example Test Session
 
+**Using uv:**
 ```bash
 # Full test workflow
 cd backend
 
 # Install dependencies
-pip install -r requirements.txt
+uv sync
 
 # Run all tests with coverage
-pytest --cov=app --cov-report=html -v
+uv run pytest --cov=app --cov-report=html -v
 
 # View results
 # - Terminal: Coverage summary
@@ -379,11 +399,19 @@ pytest --cov=app --cov-report=html -v
 
 # Fix any failing tests
 # Run specific test file
-pytest tests/test_voca_engine.py -v
+uv run pytest tests/test_voca_engine.py -v
 
 # Once all pass, commit
 git add tests/
 git commit -m "Add comprehensive test suite"
+```
+
+**Using pip:**
+```bash
+cd backend
+pip install -r requirements.txt
+pytest --cov=app --cov-report=html -v
+pytest tests/test_voca_engine.py -v
 ```
 
 ## Contributing Tests
