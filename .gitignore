@@ -48,6 +48,17 @@ docs/wasm/*.wasm
 .env.local
 .env.*.local
 
+# Backend (FastAPI)
+backend/__pycache__/
+backend/**/__pycache__/
+backend/*.db
+backend/*.sqlite
+backend/venv/
+backend/env/
+backend/.venv/
+backend/bindings/build/
+backend/alembic/versions/*.pyc
+
 # Cloudflare Worker
 cloudflare-worker/node_modules/
 cloudflare-worker/.wrangler/
