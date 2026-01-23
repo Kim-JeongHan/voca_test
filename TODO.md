@@ -21,6 +21,8 @@
 - [x] `MIGRATION_GUIDE.md` - Migration steps
 - [x] `QUICK_START.md` - Quick start
 - [x] `backend/IMPLEMENTATION_STATUS.txt` - Status
+- [x] `UV_GUIDE.md` - uv 사용 가이드
+- [x] `CLAUDE.md` - Python Backend 섹션 추가
 
 ## 🔄 In Progress
 
@@ -122,10 +124,11 @@
 ### Priority 4: Testing
 
 #### Unit Tests
-- [ ] Create `backend/tests/test_tts_service.py`
-- [ ] Create `backend/tests/test_image_service.py`
-- [ ] Create `backend/tests/test_session_service.py`
-- [ ] Create `backend/tests/test_api.py`
+- [x] Create `backend/tests/test_tts_service.py`
+- [x] Create `backend/tests/test_image_service.py`
+- [x] Create `backend/tests/test_session_service.py`
+- [x] Create `backend/tests/test_api.py`
+- [x] Create `backend/tests/test_voca_engine.py`
 
 #### Integration Tests
 - [ ] Test full quiz flow
@@ -249,7 +252,7 @@ Before going live:
 - [ ] CORS configured correctly
 - [ ] Error handling verified
 - [ ] Performance acceptable
-- [ ] Documentation updated
+- [x] Documentation updated
 - [ ] Backup strategy in place
 
 ---

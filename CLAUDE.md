@@ -6,10 +6,18 @@ C++ 단어 학습 프로그램. CSV 단어장을 로드하여 퀴즈/테스트�
 
 ## Tech Stack
 
+### C++ Core
 - Language: C++17
 - Build System: CMake 3.10+
 - Linter: clang-format (v16)
 - Pre-commit: pre-commit hooks enabled
+
+### Python Backend
+- Language: Python 3.12
+- Framework: FastAPI
+- ORM: SQLAlchemy
+- Package Manager: uv (recommended)
+- Database: SQLite (dev) / PostgreSQL (prod)
 
 ## Operational Commands
 
@@ -33,6 +41,19 @@ clang-format -i src/*.cpp include/voca_test/*.hpp
 # Generate TTS audio for word decks
 uv sync
 uv run generate_audio.py
+
+# Backend (FastAPI)
+cd backend
+uv sync
+cp .env.example .env  # Edit with API keys
+uv run python init_db.py --sample
+uv run uvicorn app.main:app --reload
+
+# Backend tests
+cd backend && uv run pytest
+
+# Docker Compose (full stack)
+docker-compose up -d
 ```
 
 ## Golden Rules
@@ -128,7 +149,88 @@ docs/
 - `image_association.js`의 workerUrl은 배포된 Image Worker URL로 설정 필요
 - `sw.js`의 CACHE_NAME 버전은 에셋 변경 시 증가 필요
 
-## Cloudflare Worker (cloudflare-worker/)
+## Python Backend (backend/)
+
+FastAPI 기반 백엔드. TTS, 이미지 생성, 퀴즈 세션 관리 REST API 제공.
+
+### 아키텍처
+
+```
+backend/
+├── app/
+│   ├── api/v1/          # API 라우트 (tts, image, session, decks)
+│   ├── core/            # C++ 엔진 래퍼 (pybind11)
+│   ├── models/          # SQLAlchemy 모델
+│   ├── schemas/         # Pydantic 스키마
+│   ├── services/        # 비즈니스 로직 (TTS, Image, Session)
+│   ├── config.py        # 설정
+│   ├── database.py      # DB 설정
+│   └── main.py          # FastAPI 앱
+├── tests/               # pytest 테스트
+├── .env.example         # 환경 변수 템플릿
+├── pyproject.toml       # uv 프로젝트 설정
+└── Dockerfile
+```
+
+### 주요 API 엔드포인트
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/v1/tts` | POST | TTS 오디오 생성 |
+| `/api/v1/image` | POST | 연상 이미지 생성 |
+| `/api/v1/session/start` | POST | 퀴즈 세션 시작 |
+| `/api/v1/session/{id}/submit` | POST | 답안 제출 |
+| `/api/v1/decks` | GET | 덱 목록 조회 |
+
+### 로컬 개발
+
+```bash
+cd backend
+uv sync                           # 의존성 설치
+cp .env.example .env              # 환경 변수 설정
+uv run python init_db.py --sample # DB 초기화 (샘플 데이터)
+uv run uvicorn app.main:app --reload
+```
+
+- API: http://localhost:8000
+- Swagger Docs: http://localhost:8000/docs
+
+### Docker Compose 배포
+
+```bash
+# 프로젝트 루트에서
+cp backend/.env.example backend/.env
+docker-compose up -d
+
+# 서비스 확인
+# - Backend: http://localhost:8000
+# - Frontend: http://localhost:3000
+# - PostgreSQL: localhost:5432
+```
+
+### 환경 변수
+
+```env
+DATABASE_URL=sqlite:///./voca.db
+ELEVENLABS_API_KEY=your_key
+HUGGINGFACE_API_KEY=your_key
+GITHUB_TOKEN=your_token
+CORS_ORIGINS=http://localhost:3000
+```
+
+### 테스트
+
+```bash
+cd backend
+uv run pytest                     # 전체 테스트
+uv run pytest --cov=app           # 커버리지 포함
+```
+
+자세한 내용은 [UV_GUIDE.md](./UV_GUIDE.md) 및 [backend/README.md](./backend/README.md) 참조.
+
+## Cloudflare Worker (Legacy)
+
+> **Note**: Python Backend 사용 권장. Cloudflare Worker는 레거시로 유지됨.
 
 ElevenLabs TTS API 프록시. API 키를 서버 측에 안전하게 보관.
 
@@ -160,7 +262,9 @@ cloudflare-worker/
 - 8초 타임아웃
 - Content-Type 검증
 
-## Cloudflare Worker - Image (cloudflare-worker-image/)
+## Cloudflare Worker - Image (Legacy)
+
+> **Note**: Python Backend 사용 권장. Cloudflare Worker는 레거시로 유지됨.
 
 HuggingFace Stable Diffusion API 프록시. 연상 이미지 생성용.
 
@@ -229,3 +333,5 @@ uv run generate_audio.py
 - **[Core Logic (src/)](./src/CLAUDE.md)** — 핵심 비즈니스 로직 수정 시
 - **[Tests (tests/)](./tests/CLAUDE.md)** — 테스트 작성 및 수정 시
 - **[Web UI (docs/)](./docs/)** — 웹 인터페이스 수정 시
+- **[Backend (backend/)](./backend/README.md)** — FastAPI 백엔드 수정 시
+- **[UV Guide](./UV_GUIDE.md)** — Python/uv 사용법
