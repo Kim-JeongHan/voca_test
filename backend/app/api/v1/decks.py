@@ -1,10 +1,11 @@
+# -*- coding: utf-8 -*-
 """
 Decks API Router
 """
 
 import csv
 import io
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
 
 from app.database import get_db
@@ -15,9 +16,7 @@ router = APIRouter()
 
 
 @router.get("/decks", response_model=list[DeckResponse])
-async def list_decks(
-    db: Session = Depends(get_db)
-):
+async def list_decks(db: Session = Depends(get_db)):
     """
     List all available decks.
     """
@@ -28,17 +27,14 @@ async def list_decks(
     for deck in decks:
         word_count = db.query(Word).filter(Word.deck_id == deck.id).count()
         deck_dict = DeckResponse.from_orm(deck).model_dump()
-        deck_dict['word_count'] = word_count
+        deck_dict["word_count"] = word_count
         result.append(DeckResponse(**deck_dict))
 
     return result
 
 
 @router.get("/decks/{deck_id}", response_model=DeckWithWords)
-async def get_deck(
-    deck_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_deck(deck_id: int, db: Session = Depends(get_db)):
     """
     Get a specific deck with all its words.
     """
@@ -52,9 +48,9 @@ async def get_deck(
 @router.post("/decks/upload", response_model=DeckResponse)
 async def upload_deck(
     file: UploadFile = File(...),
-    name: str = None,
-    description: str = None,
-    db: Session = Depends(get_db)
+    name: str = Form(None),
+    description: str = Form(None),
+    db: Session = Depends(get_db),
 ):
     """
     Upload a CSV file to create a new deck.
@@ -67,7 +63,7 @@ async def upload_deck(
     try:
         # Read CSV content
         content = await file.read()
-        text = content.decode('utf-8')
+        text = content.decode("utf-8")
 
         # Parse CSV
         csv_reader = csv.reader(io.StringIO(text))
@@ -81,22 +77,16 @@ async def upload_deck(
             meaning = row[1].strip()
 
             if word and meaning:
-                words_data.append({
-                    'word': word,
-                    'meaning': meaning,
-                    'index_in_deck': index
-                })
+                words_data.append(
+                    {"word": word, "meaning": meaning, "index_in_deck": index}
+                )
 
         if not words_data:
             raise HTTPException(status_code=400, detail="No valid words found in CSV")
 
         # Create deck
-        deck_name = name or file.filename.replace('.csv', '')
-        deck = Deck(
-            name=deck_name,
-            description=description,
-            csv_path=file.filename
-        )
+        deck_name = name or file.filename.replace(".csv", "")
+        deck = Deck(name=deck_name, description=description, csv_path=file.filename)
 
         db.add(deck)
         db.commit()
@@ -106,9 +96,9 @@ async def upload_deck(
         for word_data in words_data:
             word = Word(
                 deck_id=deck.id,
-                word=word_data['word'],
-                meaning=word_data['meaning'],
-                index_in_deck=word_data['index_in_deck']
+                word=word_data["word"],
+                meaning=word_data["meaning"],
+                index_in_deck=word_data["index_in_deck"],
             )
             db.add(word)
 
@@ -117,22 +107,21 @@ async def upload_deck(
 
         # Return deck with word count
         deck_dict = DeckResponse.from_orm(deck).model_dump()
-        deck_dict['word_count'] = len(words_data)
+        deck_dict["word_count"] = len(words_data)
 
         return DeckResponse(**deck_dict)
 
     except UnicodeDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid CSV encoding. Please use UTF-8.")
+        raise HTTPException(
+            status_code=400, detail="Invalid CSV encoding. Please use UTF-8."
+        )
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Failed to upload deck: {str(e)}")
 
 
 @router.delete("/decks/{deck_id}")
-async def delete_deck(
-    deck_id: int,
-    db: Session = Depends(get_db)
-):
+async def delete_deck(deck_id: int, db: Session = Depends(get_db)):
     """
     Delete a deck and all its words.
     """
@@ -147,10 +136,7 @@ async def delete_deck(
 
 
 @router.get("/decks/{deck_id}/words", response_model=list[WordResponse])
-async def get_deck_words(
-    deck_id: int,
-    db: Session = Depends(get_db)
-):
+async def get_deck_words(deck_id: int, db: Session = Depends(get_db)):
     """
     Get all words in a deck.
     """
@@ -158,5 +144,10 @@ async def get_deck_words(
     if not deck:
         raise HTTPException(status_code=404, detail=f"Deck {deck_id} not found")
 
-    words = db.query(Word).filter(Word.deck_id == deck_id).order_by(Word.index_in_deck).all()
+    words = (
+        db.query(Word)
+        .filter(Word.deck_id == deck_id)
+        .order_by(Word.index_in_deck)
+        .all()
+    )
     return words

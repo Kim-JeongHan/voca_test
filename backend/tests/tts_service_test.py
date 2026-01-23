@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Unit tests for TTS Service.
 
@@ -22,9 +23,7 @@ class TestTTSService:
         """Test retrieving audio from cache."""
         # Create cached audio
         cached_audio = AudioCache(
-            text="hello",
-            audio_data=b"cached_audio_data",
-            content_type="audio/mpeg"
+            text="hello", audio_data=b"cached_audio_data", content_type="audio/mpeg"
         )
         db_session.add(cached_audio)
         db_session.commit()
@@ -38,11 +37,15 @@ class TestTTSService:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_tts_audio_creates_cache(self, db_session, mock_elevenlabs_response):
+    async def test_get_tts_audio_creates_cache(
+        self, db_session, mock_elevenlabs_response
+    ):
         """Test TTS service creates cache entry on API call."""
         service = TTSService(db_session)
 
-        with patch.object(service, '_call_elevenlabs_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_elevenlabs_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_elevenlabs_response
 
             # First call (should hit API)
@@ -53,17 +56,23 @@ class TestTTSService:
             mock_api.assert_called_once_with("test")
 
             # Verify cache was created
-            cached = db_session.query(AudioCache).filter(AudioCache.text == "test").first()
+            cached = (
+                db_session.query(AudioCache).filter(AudioCache.text == "test").first()
+            )
             assert cached is not None
             assert cached.audio_data == mock_elevenlabs_response
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_tts_audio_uses_cache_on_second_call(self, db_session, mock_elevenlabs_response):
+    async def test_get_tts_audio_uses_cache_on_second_call(
+        self, db_session, mock_elevenlabs_response
+    ):
         """Test that second call uses cache instead of API."""
         service = TTSService(db_session)
 
-        with patch.object(service, '_call_elevenlabs_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_elevenlabs_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_elevenlabs_response
 
             # First call
@@ -96,11 +105,15 @@ class TestTTSService:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_tts_audio_strips_whitespace(self, db_session, mock_elevenlabs_response):
+    async def test_get_tts_audio_strips_whitespace(
+        self, db_session, mock_elevenlabs_response
+    ):
         """Test that text is trimmed before processing."""
         service = TTSService(db_session)
 
-        with patch.object(service, '_call_elevenlabs_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_elevenlabs_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_elevenlabs_response
 
             await service.get_tts_audio("  hello  ")
@@ -119,7 +132,7 @@ class TestTTSService:
         mock_response.is_success = True
         mock_response.content = b"audio_data"
 
-        with patch('httpx.AsyncClient.post', return_value=mock_response):
+        with patch("httpx.AsyncClient.post", return_value=mock_response):
             audio_data = await service._call_elevenlabs_api("hello")
             assert audio_data == b"audio_data"
 
@@ -129,7 +142,7 @@ class TestTTSService:
         """Test API call fails without API key."""
         service = TTSService(db_session)
 
-        with patch('app.services.tts_service.settings') as mock_settings:
+        with patch("app.services.tts_service.settings") as mock_settings:
             mock_settings.elevenlabs_api_key = None
 
             with pytest.raises(ValueError, match="ELEVENLABS_API_KEY not configured"):
@@ -146,8 +159,8 @@ class TestTTSService:
         mock_response.is_success = False
         mock_response.status_code = 500
 
-        with patch('httpx.AsyncClient.post', return_value=mock_response):
-            with patch('app.services.tts_service.settings') as mock_settings:
+        with patch("httpx.AsyncClient.post", return_value=mock_response):
+            with patch("app.services.tts_service.settings") as mock_settings:
                 mock_settings.elevenlabs_api_key = "test_key"
 
                 with pytest.raises(httpx.HTTPError, match="ElevenLabs API error: 500"):
@@ -155,11 +168,15 @@ class TestTTSService:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_cache_different_texts_separately(self, db_session, mock_elevenlabs_response):
+    async def test_cache_different_texts_separately(
+        self, db_session, mock_elevenlabs_response
+    ):
         """Test that different texts are cached separately."""
         service = TTSService(db_session)
 
-        with patch.object(service, '_call_elevenlabs_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_elevenlabs_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_elevenlabs_response
 
             # Generate audio for two different texts
@@ -179,7 +196,9 @@ class TestTTSService:
         """Test that cache keys are case-sensitive after normalization."""
         service = TTSService(db_session)
 
-        with patch.object(service, '_call_elevenlabs_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_elevenlabs_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_elevenlabs_response
 
             # Generate audio for same text

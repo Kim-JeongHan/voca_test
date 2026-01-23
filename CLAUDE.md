@@ -215,7 +215,7 @@ DATABASE_URL=sqlite:///./voca.db
 ELEVENLABS_API_KEY=your_key
 HUGGINGFACE_API_KEY=your_key
 GITHUB_TOKEN=your_token
-CORS_ORIGINS=http://localhost:3000
+CORS_ORIGINS_STR=http://localhost:3000,http://127.0.0.1:3000
 ```
 
 ### 테스트

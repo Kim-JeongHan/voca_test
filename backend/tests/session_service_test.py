@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Unit tests for Session Service.
 
@@ -22,9 +23,7 @@ class TestSessionService:
         """Test starting session with all words."""
         service = SessionService(db_session)
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=None, is_wrong_only=False
         )
 
         response = service.start_session(request)
@@ -43,7 +42,7 @@ class TestSessionService:
         request = SessionStartRequest(
             deck_id=create_test_deck.id,
             word_indices=[0, 2],  # First and third words
-            is_wrong_only=False
+            is_wrong_only=False,
         )
 
         response = service.start_session(request)
@@ -58,9 +57,7 @@ class TestSessionService:
         """Test starting wrong-only session."""
         service = SessionService(db_session)
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=[1],
-            is_wrong_only=True
+            deck_id=create_test_deck.id, word_indices=[1], is_wrong_only=True
         )
 
         response = service.start_session(request)
@@ -72,9 +69,7 @@ class TestSessionService:
         """Test starting session with non-existent deck."""
         service = SessionService(db_session)
         request = SessionStartRequest(
-            deck_id=999,  # Non-existent
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=999, word_indices=None, is_wrong_only=False  # Non-existent
         )
 
         with pytest.raises(ValueError, match="Deck 999 not found"):
@@ -87,9 +82,7 @@ class TestSessionService:
 
         # Start session
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=None, is_wrong_only=False
         )
         session_response = service.start_session(request)
 
@@ -123,7 +116,7 @@ class TestSessionService:
             score=0,
             total_questions=1,
             is_completed=True,
-            completed_at=datetime.utcnow()
+            completed_at=datetime.utcnow(),
         )
         db_session.add(session)
         db_session.commit()
@@ -138,17 +131,12 @@ class TestSessionService:
 
         # Start session
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=None, is_wrong_only=False
         )
         session_response = service.start_session(request)
 
         # Submit correct answer
-        submit_request = SubmitRequest(
-            answer="탈출하다",
-            hint_used=0
-        )
+        submit_request = SubmitRequest(answer="탈출하다", hint_used=0)
         result = service.submit_answer(session_response.id, submit_request)
 
         assert result.is_correct is True
@@ -157,9 +145,11 @@ class TestSessionService:
         assert result.progress == "1/3"
 
         # Verify answer was saved
-        answer = db_session.query(Answer).filter(
-            Answer.session_id == session_response.id
-        ).first()
+        answer = (
+            db_session.query(Answer)
+            .filter(Answer.session_id == session_response.id)
+            .first()
+        )
         assert answer is not None
         assert answer.is_correct is True
         assert answer.user_answer == "탈출하다"
@@ -171,27 +161,25 @@ class TestSessionService:
 
         # Start session
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=None, is_wrong_only=False
         )
         session_response = service.start_session(request)
 
         # Submit wrong answer
-        submit_request = SubmitRequest(
-            answer="wrong_answer",
-            hint_used=0
-        )
+        submit_request = SubmitRequest(answer="wrong_answer", hint_used=0)
         result = service.submit_answer(session_response.id, submit_request)
 
         assert result.is_correct is False
         assert result.score == 0
 
         # Verify wrong stats were updated
-        stats = db_session.query(WrongStats).filter(
-            WrongStats.word == "escape",
-            WrongStats.deck_id == create_test_deck.id
-        ).first()
+        stats = (
+            db_session.query(WrongStats)
+            .filter(
+                WrongStats.word == "escape", WrongStats.deck_id == create_test_deck.id
+            )
+            .first()
+        )
         assert stats is not None
         assert stats.wrong_count == 1
 
@@ -202,16 +190,13 @@ class TestSessionService:
 
         # Start session
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=None, is_wrong_only=False
         )
         session_response = service.start_session(request)
 
         # Submit correct answer but with 2 hints
         submit_request = SubmitRequest(
-            answer="탈출하다",  # Correct answer
-            hint_used=2  # But used hints
+            answer="탈출하다", hint_used=2  # Correct answer  # But used hints
         )
         result = service.submit_answer(session_response.id, submit_request)
 
@@ -225,9 +210,7 @@ class TestSessionService:
 
         # Start session
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=None,
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=None, is_wrong_only=False
         )
         session_response = service.start_session(request)
 
@@ -249,9 +232,7 @@ class TestSessionService:
 
         # Start session with only one word
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=[0],
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=[0], is_wrong_only=False
         )
         session_response = service.start_session(request)
 
@@ -260,7 +241,9 @@ class TestSessionService:
         service.submit_answer(session_response.id, submit_request)
 
         # Verify session is completed
-        session = db_session.query(Session).filter(Session.id == session_response.id).first()
+        session = (
+            db_session.query(Session).filter(Session.id == session_response.id).first()
+        )
         assert session.is_completed is True
         assert session.completed_at is not None
 
@@ -271,15 +254,17 @@ class TestSessionService:
 
         # Create completed session
         request = SessionStartRequest(
-            deck_id=create_test_deck.id,
-            word_indices=[0, 1],
-            is_wrong_only=False
+            deck_id=create_test_deck.id, word_indices=[0, 1], is_wrong_only=False
         )
         session_response = service.start_session(request)
 
         # Submit answers
-        service.submit_answer(session_response.id, SubmitRequest(answer="탈출하다", hint_used=0))  # Correct
-        service.submit_answer(session_response.id, SubmitRequest(answer="wrong", hint_used=0))  # Wrong
+        service.submit_answer(
+            session_response.id, SubmitRequest(answer="탈출하다", hint_used=0)
+        )  # Correct
+        service.submit_answer(
+            session_response.id, SubmitRequest(answer="wrong", hint_used=0)
+        )  # Wrong
 
         # Get summary
         summary = service.get_summary(session_response.id)
@@ -297,16 +282,8 @@ class TestSessionService:
         service = SessionService(db_session)
 
         # Create wrong stats
-        stats1 = WrongStats(
-            word="escape",
-            deck_id=create_test_deck.id,
-            wrong_count=2
-        )
-        stats2 = WrongStats(
-            word="abandon",
-            deck_id=create_test_deck.id,
-            wrong_count=1
-        )
+        stats1 = WrongStats(word="escape", deck_id=create_test_deck.id, wrong_count=2)
+        stats2 = WrongStats(word="abandon", deck_id=create_test_deck.id, wrong_count=1)
         db_session.add_all([stats1, stats2])
         db_session.commit()
 
@@ -323,16 +300,8 @@ class TestSessionService:
         service = SessionService(db_session)
 
         # Create wrong stats
-        stats1 = WrongStats(
-            word="escape",
-            deck_id=create_test_deck.id,
-            wrong_count=3
-        )
-        stats2 = WrongStats(
-            word="abandon",
-            deck_id=create_test_deck.id,
-            wrong_count=1
-        )
+        stats1 = WrongStats(word="escape", deck_id=create_test_deck.id, wrong_count=3)
+        stats2 = WrongStats(word="abandon", deck_id=create_test_deck.id, wrong_count=1)
         db_session.add_all([stats1, stats2])
         db_session.commit()
 
@@ -352,10 +321,13 @@ class TestSessionService:
         service._update_wrong_stats("escape", create_test_deck.id)
 
         # Verify created
-        stats = db_session.query(WrongStats).filter(
-            WrongStats.word == "escape",
-            WrongStats.deck_id == create_test_deck.id
-        ).first()
+        stats = (
+            db_session.query(WrongStats)
+            .filter(
+                WrongStats.word == "escape", WrongStats.deck_id == create_test_deck.id
+            )
+            .first()
+        )
         assert stats is not None
         assert stats.wrong_count == 1
 
@@ -365,11 +337,7 @@ class TestSessionService:
         service = SessionService(db_session)
 
         # Create initial stats
-        stats = WrongStats(
-            word="escape",
-            deck_id=create_test_deck.id,
-            wrong_count=1
-        )
+        stats = WrongStats(word="escape", deck_id=create_test_deck.id, wrong_count=1)
         db_session.add(stats)
         db_session.commit()
 
@@ -377,8 +345,11 @@ class TestSessionService:
         service._update_wrong_stats("escape", create_test_deck.id)
 
         # Verify incremented
-        updated = db_session.query(WrongStats).filter(
-            WrongStats.word == "escape",
-            WrongStats.deck_id == create_test_deck.id
-        ).first()
+        updated = (
+            db_session.query(WrongStats)
+            .filter(
+                WrongStats.word == "escape", WrongStats.deck_id == create_test_deck.id
+            )
+            .first()
+        )
         assert updated.wrong_count == 2

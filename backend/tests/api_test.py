@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 API endpoint integration tests.
 
@@ -121,7 +122,7 @@ class TestSessionAPI:
         request_data = {
             "deck_id": create_test_deck.id,
             "word_indices": None,
-            "is_wrong_only": False
+            "is_wrong_only": False,
         }
 
         response = client.post("/api/v1/session/start", json=request_data)
@@ -139,7 +140,7 @@ class TestSessionAPI:
         request_data = {
             "deck_id": create_test_deck.id,
             "word_indices": [0, 2],
-            "is_wrong_only": False
+            "is_wrong_only": False,
         }
 
         response = client.post("/api/v1/session/start", json=request_data)
@@ -150,11 +151,7 @@ class TestSessionAPI:
     @pytest.mark.api
     def test_start_session_invalid_deck(self, client):
         """Test starting session with non-existent deck."""
-        request_data = {
-            "deck_id": 999,
-            "word_indices": None,
-            "is_wrong_only": False
-        }
+        request_data = {"deck_id": 999, "word_indices": None, "is_wrong_only": False}
 
         response = client.post("/api/v1/session/start", json=request_data)
         assert response.status_code == 404
@@ -163,11 +160,14 @@ class TestSessionAPI:
     def test_get_prompt(self, client, create_test_deck):
         """Test getting question prompt."""
         # Start session
-        session_response = client.post("/api/v1/session/start", json={
-            "deck_id": create_test_deck.id,
-            "word_indices": None,
-            "is_wrong_only": False
-        })
+        session_response = client.post(
+            "/api/v1/session/start",
+            json={
+                "deck_id": create_test_deck.id,
+                "word_indices": None,
+                "is_wrong_only": False,
+            },
+        )
         session_id = session_response.json()["id"]
 
         # Get prompt
@@ -183,11 +183,14 @@ class TestSessionAPI:
     def test_submit_answer(self, client, create_test_deck):
         """Test submitting an answer."""
         # Start session
-        session_response = client.post("/api/v1/session/start", json={
-            "deck_id": create_test_deck.id,
-            "word_indices": None,
-            "is_wrong_only": False
-        })
+        session_response = client.post(
+            "/api/v1/session/start",
+            json={
+                "deck_id": create_test_deck.id,
+                "word_indices": None,
+                "is_wrong_only": False,
+            },
+        )
         session_id = session_response.json()["id"]
 
         # Submit correct answer
@@ -202,11 +205,14 @@ class TestSessionAPI:
     def test_submit_wrong_answer(self, client, create_test_deck):
         """Test submitting wrong answer."""
         # Start session
-        session_response = client.post("/api/v1/session/start", json={
-            "deck_id": create_test_deck.id,
-            "word_indices": None,
-            "is_wrong_only": False
-        })
+        session_response = client.post(
+            "/api/v1/session/start",
+            json={
+                "deck_id": create_test_deck.id,
+                "word_indices": None,
+                "is_wrong_only": False,
+            },
+        )
         session_id = session_response.json()["id"]
 
         # Submit wrong answer
@@ -221,18 +227,21 @@ class TestSessionAPI:
     def test_complete_session_flow(self, client, create_test_deck):
         """Test complete session from start to summary."""
         # Start session
-        session_response = client.post("/api/v1/session/start", json={
-            "deck_id": create_test_deck.id,
-            "word_indices": [0],  # Only one word
-            "is_wrong_only": False
-        })
+        session_response = client.post(
+            "/api/v1/session/start",
+            json={
+                "deck_id": create_test_deck.id,
+                "word_indices": [0],  # Only one word
+                "is_wrong_only": False,
+            },
+        )
         session_id = session_response.json()["id"]
 
         # Submit answer
-        client.post(f"/api/v1/session/{session_id}/submit", json={
-            "answer": "탈출하다",
-            "hint_used": 0
-        })
+        client.post(
+            f"/api/v1/session/{session_id}/submit",
+            json={"answer": "탈출하다", "hint_used": 0},
+        )
 
         # Get summary
         response = client.get(f"/api/v1/session/{session_id}/summary")
@@ -246,18 +255,21 @@ class TestSessionAPI:
     def test_get_wrong_words(self, client, create_test_deck):
         """Test getting wrong words from session."""
         # Start and complete session with wrong answer
-        session_response = client.post("/api/v1/session/start", json={
-            "deck_id": create_test_deck.id,
-            "word_indices": [0],
-            "is_wrong_only": False
-        })
+        session_response = client.post(
+            "/api/v1/session/start",
+            json={
+                "deck_id": create_test_deck.id,
+                "word_indices": [0],
+                "is_wrong_only": False,
+            },
+        )
         session_id = session_response.json()["id"]
 
         # Submit wrong answer
-        client.post(f"/api/v1/session/{session_id}/submit", json={
-            "answer": "wrong",
-            "hint_used": 0
-        })
+        client.post(
+            f"/api/v1/session/{session_id}/submit",
+            json={"answer": "wrong", "hint_used": 0},
+        )
 
         # Get wrong words
         response = client.get(f"/api/v1/session/{session_id}/wrong")
@@ -273,8 +285,10 @@ class TestTTSAPI:
     @pytest.mark.external
     def test_tts_endpoint_mocked(self, client, mock_elevenlabs_response):
         """Test TTS endpoint with mocked API."""
-        with patch('app.services.tts_service.TTSService._call_elevenlabs_api',
-                   new_callable=AsyncMock) as mock_api:
+        with patch(
+            "app.services.tts_service.TTSService._call_elevenlabs_api",
+            new_callable=AsyncMock,
+        ) as mock_api:
             mock_api.return_value = mock_elevenlabs_response
 
             request_data = {"text": "hello"}
@@ -286,13 +300,13 @@ class TestTTSAPI:
     @pytest.mark.api
     def test_tts_endpoint_validation(self, client):
         """Test TTS endpoint input validation."""
-        # Empty text
+        # Empty text - raises ValueError in service, returns 400
         response = client.post("/api/v1/tts", json={"text": ""})
         assert response.status_code == 400
 
-        # Too long text
+        # Too long text - Pydantic validation returns 422
         response = client.post("/api/v1/tts", json={"text": "a" * 101})
-        assert response.status_code == 400
+        assert response.status_code == 422
 
 
 class TestImageAPI:
@@ -302,8 +316,10 @@ class TestImageAPI:
     @pytest.mark.external
     def test_image_endpoint_mocked(self, client, mock_huggingface_response):
         """Test image endpoint with mocked API."""
-        with patch('app.services.image_service.ImageService._call_huggingface_api',
-                   new_callable=AsyncMock) as mock_api:
+        with patch(
+            "app.services.image_service.ImageService._call_huggingface_api",
+            new_callable=AsyncMock,
+        ) as mock_api:
             mock_api.return_value = mock_huggingface_response
 
             request_data = {"word": "escape"}
@@ -315,10 +331,10 @@ class TestImageAPI:
     @pytest.mark.api
     def test_image_endpoint_validation(self, client):
         """Test image endpoint input validation."""
-        # Empty word
+        # Empty word - raises ValueError in service, returns 400
         response = client.post("/api/v1/image", json={"word": ""})
         assert response.status_code == 400
 
-        # Too long word
+        # Too long word - Pydantic validation returns 422
         response = client.post("/api/v1/image", json={"word": "a" * 51})
-        assert response.status_code == 400
+        assert response.status_code == 422

@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Unit tests for Image Service.
 
@@ -6,7 +7,7 @@ Uses mocking to simulate API responses.
 """
 
 import pytest
-from unittest.mock import AsyncMock, patch
+from unittest.mock import AsyncMock, MagicMock, patch
 import httpx
 import base64
 
@@ -26,7 +27,7 @@ class TestImageService:
             word="escape",
             image_data=b"cached_image_data",
             content_type="image/png",
-            github_url="https://github.com/test/image.png"
+            github_url="https://github.com/test/image.png",
         )
         db_session.add(cached_image)
         db_session.commit()
@@ -45,7 +46,9 @@ class TestImageService:
         """Test image service creates cache entry on API call."""
         service = ImageService(db_session)
 
-        with patch.object(service, '_call_huggingface_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_huggingface_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_huggingface_response
 
             # First call (should hit API)
@@ -57,7 +60,9 @@ class TestImageService:
             mock_api.assert_called_once_with("test")
 
             # Verify cache was created
-            cached = db_session.query(ImageCache).filter(ImageCache.word == "test").first()
+            cached = (
+                db_session.query(ImageCache).filter(ImageCache.word == "test").first()
+            )
             assert cached is not None
             assert cached.image_data == mock_huggingface_response
 
@@ -81,18 +86,24 @@ class TestImageService:
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_get_image_normalizes_word(self, db_session, mock_huggingface_response):
+    async def test_get_image_normalizes_word(
+        self, db_session, mock_huggingface_response
+    ):
         """Test that word is normalized (lowercase, trimmed)."""
         service = ImageService(db_session)
 
-        with patch.object(service, '_call_huggingface_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_huggingface_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_huggingface_response
 
             # Test with uppercase and spaces
             await service.get_image("  ESCAPE  ")
 
             # Should cache with normalized word
-            cached = db_session.query(ImageCache).filter(ImageCache.word == "escape").first()
+            cached = (
+                db_session.query(ImageCache).filter(ImageCache.word == "escape").first()
+            )
             assert cached is not None
 
     @pytest.mark.unit
@@ -117,7 +128,7 @@ class TestImageService:
         mock_response.status_code = 200
         mock_response.content = b"image_data"
 
-        with patch('httpx.AsyncClient.post', return_value=mock_response):
+        with patch("httpx.AsyncClient.post", return_value=mock_response):
             image_data = await service._call_huggingface_api("escape")
             assert image_data == b"image_data"
 
@@ -127,7 +138,7 @@ class TestImageService:
         """Test API call fails without API key."""
         service = ImageService(db_session)
 
-        with patch('app.services.image_service.settings') as mock_settings:
+        with patch("app.services.image_service.settings") as mock_settings:
             mock_settings.huggingface_api_key = None
 
             with pytest.raises(ValueError, match="HUGGINGFACE_API_KEY not configured"):
@@ -144,8 +155,8 @@ class TestImageService:
         mock_response.is_success = False
         mock_response.status_code = 503
 
-        with patch('httpx.AsyncClient.post', return_value=mock_response):
-            with patch('app.services.image_service.settings') as mock_settings:
+        with patch("httpx.AsyncClient.post", return_value=mock_response):
+            with patch("app.services.image_service.settings") as mock_settings:
                 mock_settings.huggingface_api_key = "test_key"
 
                 with pytest.raises(httpx.HTTPError, match="Model is loading"):
@@ -162,8 +173,8 @@ class TestImageService:
         mock_response.is_success = False
         mock_response.status_code = 500
 
-        with patch('httpx.AsyncClient.post', return_value=mock_response):
-            with patch('app.services.image_service.settings') as mock_settings:
+        with patch("httpx.AsyncClient.post", return_value=mock_response):
+            with patch("app.services.image_service.settings") as mock_settings:
                 mock_settings.huggingface_api_key = "test_key"
 
                 with pytest.raises(httpx.HTTPError, match="HuggingFace API error: 500"):
@@ -176,21 +187,29 @@ class TestImageService:
         service = ImageService(db_session)
         test_image = b"test_image_data"
 
-        # Mock GitHub API responses
-        mock_check_response = AsyncMock()
+        # Mock GitHub API responses (use MagicMock for sync methods like json())
+        mock_check_response = MagicMock()
         mock_check_response.status_code = 404  # File doesn't exist
 
-        mock_put_response = AsyncMock()
+        mock_put_response = MagicMock()
         mock_put_response.is_success = True
         mock_put_response.json.return_value = {
-            'content': {
-                'html_url': 'https://github.com/user/repo/blob/master/docs/images/test.png'
+            "content": {
+                "html_url": "https://github.com/user/repo/blob/master/docs/images/test.png"
             }
         }
 
-        with patch('httpx.AsyncClient.get', return_value=mock_check_response):
-            with patch('httpx.AsyncClient.put', return_value=mock_put_response):
-                with patch('app.services.image_service.settings') as mock_settings:
+        with patch(
+            "httpx.AsyncClient.get",
+            new_callable=AsyncMock,
+            return_value=mock_check_response,
+        ):
+            with patch(
+                "httpx.AsyncClient.put",
+                new_callable=AsyncMock,
+                return_value=mock_put_response,
+            ):
+                with patch("app.services.image_service.settings") as mock_settings:
                     mock_settings.github_token = "test_token"
                     mock_settings.github_owner = "user"
                     mock_settings.github_repo = "repo"
@@ -198,7 +217,10 @@ class TestImageService:
 
                     url = await service.commit_to_github("test", test_image)
 
-                    assert url == 'https://github.com/user/repo/blob/master/docs/images/test.png'
+                    assert (
+                        url
+                        == "https://github.com/user/repo/blob/master/docs/images/test.png"
+                    )
 
     @pytest.mark.unit
     @pytest.mark.asyncio
@@ -206,7 +228,7 @@ class TestImageService:
         """Test GitHub commit fails without token."""
         service = ImageService(db_session)
 
-        with patch('app.services.image_service.settings') as mock_settings:
+        with patch("app.services.image_service.settings") as mock_settings:
             mock_settings.github_token = None
 
             with pytest.raises(ValueError, match="GITHUB_TOKEN not configured"):
@@ -220,45 +242,58 @@ class TestImageService:
 
         # Create cached image
         cached_image = ImageCache(
-            word="test",
-            image_data=b"test_data",
-            content_type="image/png"
+            word="test", image_data=b"test_data", content_type="image/png"
         )
         db_session.add(cached_image)
         db_session.commit()
 
-        # Mock responses
-        mock_check_response = AsyncMock()
+        # Mock responses (use MagicMock for sync methods like json())
+        mock_check_response = MagicMock()
         mock_check_response.status_code = 404
 
-        mock_put_response = AsyncMock()
+        mock_put_response = MagicMock()
         mock_put_response.is_success = True
         mock_put_response.json.return_value = {
-            'content': {
-                'html_url': 'https://github.com/test/url.png'
-            }
+            "content": {"html_url": "https://github.com/test/url.png"}
         }
 
-        with patch('httpx.AsyncClient.get', return_value=mock_check_response):
-            with patch('httpx.AsyncClient.put', return_value=mock_put_response):
-                with patch('app.services.image_service.settings') as mock_settings:
+        with patch(
+            "httpx.AsyncClient.get",
+            new_callable=AsyncMock,
+            return_value=mock_check_response,
+        ):
+            with patch(
+                "httpx.AsyncClient.put",
+                new_callable=AsyncMock,
+                return_value=mock_put_response,
+            ):
+                with patch("app.services.image_service.settings") as mock_settings:
                     mock_settings.github_token = "test_token"
                     mock_settings.github_owner = "user"
                     mock_settings.github_repo = "repo"
+                    mock_settings.github_branch = "master"
 
                     await service.commit_to_github("test", b"test_data")
 
                     # Verify cache was updated
-                    updated = db_session.query(ImageCache).filter(ImageCache.word == "test").first()
-                    assert updated.github_url == 'https://github.com/test/url.png'
+                    updated = (
+                        db_session.query(ImageCache)
+                        .filter(ImageCache.word == "test")
+                        .first()
+                    )
+                    assert updated.github_url == "https://github.com/test/url.png"
 
     @pytest.mark.unit
     @pytest.mark.asyncio
-    async def test_different_words_cached_separately(self, db_session, mock_huggingface_response):
+    async def test_different_words_cached_separately(
+        self, db_session, mock_huggingface_response
+    ):
         """Test that different words are cached separately."""
         service = ImageService(db_session)
 
-        with patch.object(service, '_call_huggingface_api', new_callable=AsyncMock) as mock_api:
+        with patch.object(
+            service, "_call_huggingface_api", new_callable=AsyncMock
+        ) as mock_api:
             mock_api.return_value = mock_huggingface_response
 
             # Generate images for two different words
