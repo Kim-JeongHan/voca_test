@@ -10,8 +10,8 @@
 const VocaTTS = (() => {
     // Configuration
     const CONFIG = {
-        // TODO: Replace with your deployed Cloudflare Worker URL
-        workerUrl: 'https://voca-tts-proxy.YOUR_SUBDOMAIN.workers.dev',
+        // Backend API URL for TTS
+        workerUrl: 'http://localhost:8000/api/v1/tts',
         enabled: true,
         autoPlay: true,
     };

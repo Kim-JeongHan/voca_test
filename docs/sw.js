@@ -1,7 +1,7 @@
 // Voca Trainer Service Worker
 // Provides offline caching for PWA functionality
 
-const CACHE_NAME = 'voca-trainer-v8';
+const CACHE_NAME = 'voca-trainer-v9';
 const STATIC_ASSETS = [
     './',
     './index.html',

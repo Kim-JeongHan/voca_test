@@ -5,11 +5,11 @@
 const VocaImage = (() => {
     // Configuration
     const CONFIG = {
-        // Cloudflare Worker URL for image generation
-        workerUrl: 'https://voca-image-proxy.kimjh9813.workers.dev',
+        // Backend API URL for image generation
+        workerUrl: 'http://localhost:8000/api/v1/image',
 
-        // Cloudflare Worker URL for GitHub commits
-        githubWorkerUrl: 'https://voca-github-proxy.kimjh9813.workers.dev',
+        // Backend API URL for GitHub commits (optional)
+        githubWorkerUrl: '',
 
         // GitHub raw URL base for checking existing images
         githubRawBase: 'https://raw.githubusercontent.com/kim-jeonghan/voca_test/master/docs/images',
