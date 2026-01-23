@@ -5,10 +5,10 @@
 const VocaImage = (() => {
     // Configuration
     const CONFIG = {
-        // Backend API URL for image generation
-        workerUrl: 'http://localhost:8000/api/v1/image',
+        // Backend API URL for image generation (empty = disabled)
+        workerUrl: '',
 
-        // Backend API URL for GitHub commits (optional)
+        // Backend API URL for GitHub commits (disabled)
         githubWorkerUrl: '',
 
         // GitHub raw URL base for checking existing images
