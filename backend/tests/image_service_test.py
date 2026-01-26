@@ -129,8 +129,11 @@ class TestImageService:
         mock_response.content = b"image_data"
 
         with patch("httpx.AsyncClient.post", return_value=mock_response):
-            image_data = await service._call_huggingface_api("escape")
-            assert image_data == b"image_data"
+            with patch("app.services.image_service.settings") as mock_settings:
+                mock_settings.huggingface_api_key = "test_key"
+
+                image_data = await service._call_huggingface_api("escape")
+                assert image_data == b"image_data"
 
     @pytest.mark.unit
     @pytest.mark.asyncio

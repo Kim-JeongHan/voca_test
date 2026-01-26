@@ -70,37 +70,69 @@ class TestDecksAPI:
         assert response.status_code == 404
 
     @pytest.mark.api
-    def test_upload_deck_csv(self, client):
-        """Test uploading deck via CSV file."""
+    def test_upload_deck_csv(self, client, auth_headers):
+        """Test uploading deck via CSV file (requires auth)."""
         csv_content = "escape,탈출하다\nabandon,버리다\n"
         files = {"file": ("test.csv", io.BytesIO(csv_content.encode()), "text/csv")}
         data = {"name": "Uploaded Deck", "description": "Test upload"}
 
-        response = client.post("/api/v1/decks/upload", files=files, data=data)
+        response = client.post(
+            "/api/v1/decks/upload", files=files, data=data, headers=auth_headers
+        )
         assert response.status_code == 200
         result = response.json()
         assert result["name"] == "Uploaded Deck"
         assert result["word_count"] == 2
 
     @pytest.mark.api
-    def test_upload_deck_invalid_csv(self, client):
+    def test_upload_deck_unauthorized(self, client):
+        """Test uploading deck without auth returns 403."""
+        csv_content = "escape,탈출하다\n"
+        files = {"file": ("test.csv", io.BytesIO(csv_content.encode()), "text/csv")}
+
+        response = client.post("/api/v1/decks/upload", files=files)
+        # HTTPBearer returns 403 when no credentials provided
+        assert response.status_code == 403
+
+    @pytest.mark.api
+    def test_upload_deck_invalid_csv(self, client, auth_headers):
         """Test uploading invalid CSV."""
         csv_content = "invalid,csv,too,many,columns\n"
         files = {"file": ("test.csv", io.BytesIO(csv_content.encode()), "text/csv")}
 
-        response = client.post("/api/v1/decks/upload", files=files)
+        response = client.post(
+            "/api/v1/decks/upload", files=files, headers=auth_headers
+        )
         # Should still succeed but ignore invalid rows
         assert response.status_code in [200, 400]
 
     @pytest.mark.api
-    def test_delete_deck(self, client, create_test_deck):
-        """Test deleting a deck."""
-        response = client.delete(f"/api/v1/decks/{create_test_deck.id}")
+    def test_delete_deck(self, client, create_user_deck, auth_headers):
+        """Test deleting own deck (requires auth)."""
+        response = client.delete(
+            f"/api/v1/decks/{create_user_deck.id}", headers=auth_headers
+        )
         assert response.status_code == 200
 
         # Verify deleted
-        get_response = client.get(f"/api/v1/decks/{create_test_deck.id}")
+        get_response = client.get(f"/api/v1/decks/{create_user_deck.id}")
         assert get_response.status_code == 404
+
+    @pytest.mark.api
+    def test_delete_deck_unauthorized(self, client, create_test_deck):
+        """Test deleting deck without auth returns 403."""
+        response = client.delete(f"/api/v1/decks/{create_test_deck.id}")
+        # HTTPBearer returns 403 when no credentials provided
+        assert response.status_code == 403
+
+    @pytest.mark.api
+    def test_delete_deck_forbidden(self, client, create_test_deck, auth_headers):
+        """Test deleting other user's deck returns 403."""
+        # create_test_deck has no user_id (public deck), user can't delete it
+        response = client.delete(
+            f"/api/v1/decks/{create_test_deck.id}", headers=auth_headers
+        )
+        assert response.status_code == 403
 
     @pytest.mark.api
     def test_get_deck_words(self, client, create_test_deck):
@@ -313,28 +345,15 @@ class TestImageAPI:
     """Test Image API endpoints."""
 
     @pytest.mark.api
-    @pytest.mark.external
-    def test_image_endpoint_mocked(self, client, mock_huggingface_response):
-        """Test image endpoint with mocked API."""
-        with patch(
-            "app.services.image_service.ImageService._call_huggingface_api",
-            new_callable=AsyncMock,
-        ) as mock_api:
-            mock_api.return_value = mock_huggingface_response
-
-            request_data = {"word": "escape"}
-            response = client.post("/api/v1/image", json=request_data)
-
-            assert response.status_code == 200
-            assert response.headers["content-type"] == "image/png"
+    def test_image_endpoint_disabled(self, client):
+        """Test image endpoint is currently disabled (501 Not Implemented)."""
+        # Image generation is disabled - returns 501
+        request_data = {"word": "escape"}
+        response = client.post("/api/v1/image", json=request_data)
+        assert response.status_code == 501
 
     @pytest.mark.api
-    def test_image_endpoint_validation(self, client):
-        """Test image endpoint input validation."""
-        # Empty word - raises ValueError in service, returns 400
-        response = client.post("/api/v1/image", json={"word": ""})
-        assert response.status_code == 400
-
-        # Too long word - Pydantic validation returns 422
-        response = client.post("/api/v1/image", json={"word": "a" * 51})
-        assert response.status_code == 422
+    def test_image_github_endpoint_disabled(self, client):
+        """Test image GitHub commit endpoint is disabled (501 Not Implemented)."""
+        response = client.post("/api/v1/image/github", json={"word": "escape"})
+        assert response.status_code == 501

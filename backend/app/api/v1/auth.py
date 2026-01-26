@@ -143,9 +143,11 @@ def confirm_password_reset(
         )
 
     # Check if token is expired
-    if user.reset_token_expires and user.reset_token_expires < datetime.now(
-        timezone.utc
-    ):
+    # Handle both naive and aware datetimes from database
+    token_expires = user.reset_token_expires
+    if token_expires and token_expires.tzinfo is None:
+        token_expires = token_expires.replace(tzinfo=timezone.utc)
+    if token_expires and token_expires < datetime.now(timezone.utc):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Reset token has expired",

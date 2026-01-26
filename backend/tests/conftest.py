@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 Pytest fixtures for testing.
 
@@ -35,9 +36,7 @@ def db_engine():
 def db_session(db_engine):
     """Create a fresh database session for each test."""
     TestingSessionLocal = sessionmaker(
-        autocommit=False,
-        autoflush=False,
-        bind=db_engine
+        autocommit=False, autoflush=False, bind=db_engine
     )
     session = TestingSessionLocal()
     try:
@@ -49,6 +48,7 @@ def db_session(db_engine):
 @pytest.fixture(scope="function")
 def client(db_session):
     """Create a test client with dependency overrides."""
+
     def override_get_db():
         try:
             yield db_session
@@ -71,18 +71,20 @@ def sample_deck_data():
             {"word": "escape", "meaning": "탈출하다"},
             {"word": "abandon", "meaning": "버리다"},
             {"word": "achieve", "meaning": "성취하다"},
-        ]
+        ],
     }
 
 
 @pytest.fixture
 def create_test_deck(db_session, sample_deck_data):
-    """Create a test deck with words in the database."""
+    """Create a public test deck with words in the database."""
     from app.models.deck import Deck, Word
 
     deck = Deck(
         name=sample_deck_data["name"],
-        description=sample_deck_data["description"]
+        description=sample_deck_data["description"],
+        is_public=True,  # Make it public so anonymous users can see it
+        user_id=None,
     )
     db_session.add(deck)
     db_session.commit()
@@ -93,7 +95,7 @@ def create_test_deck(db_session, sample_deck_data):
             deck_id=deck.id,
             word=word_data["word"],
             meaning=word_data["meaning"],
-            index_in_deck=idx
+            index_in_deck=idx,
         )
         db_session.add(word)
 
@@ -112,3 +114,64 @@ def mock_elevenlabs_response():
 def mock_huggingface_response():
     """Mock successful HuggingFace API response."""
     return b"fake_image_data_png"
+
+
+@pytest.fixture
+def test_user(db_session):
+    """Create a test user in the database."""
+    from app.models.user import User
+    from app.core.security import hash_password
+
+    user = User(
+        username="testuser",
+        email="test@example.com",
+        password_hash=hash_password("password123"),
+        is_active=True,
+    )
+    db_session.add(user)
+    db_session.commit()
+    db_session.refresh(user)
+    return user
+
+
+@pytest.fixture
+def auth_token(test_user):
+    """Create an auth token for the test user."""
+    from app.core.security import create_access_token
+
+    return create_access_token(test_user.id)
+
+
+@pytest.fixture
+def auth_headers(auth_token):
+    """Get auth headers for authenticated requests."""
+    return {"Authorization": f"Bearer {auth_token}"}
+
+
+@pytest.fixture
+def create_user_deck(db_session, sample_deck_data, test_user):
+    """Create a private test deck owned by test user."""
+    from app.models.deck import Deck, Word
+
+    deck = Deck(
+        name="User's Deck",
+        description="Private deck for test user",
+        is_public=False,
+        user_id=test_user.id,
+    )
+    db_session.add(deck)
+    db_session.commit()
+    db_session.refresh(deck)
+
+    for idx, word_data in enumerate(sample_deck_data["words"]):
+        word = Word(
+            deck_id=deck.id,
+            word=word_data["word"],
+            meaning=word_data["meaning"],
+            index_in_deck=idx,
+        )
+        db_session.add(word)
+
+    db_session.commit()
+    db_session.refresh(deck)
+    return deck

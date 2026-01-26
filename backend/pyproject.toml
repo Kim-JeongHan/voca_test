@@ -29,3 +29,11 @@ dev = [
     "faker==20.1.0",
     "responses==0.24.1",
 ]
+
+[tool.pytest.ini_options]
+pythonpath = ["."]
+testpaths = ["tests"]
+markers = [
+    "api: API endpoint tests",
+    "external: Tests that mock external services",
+]
