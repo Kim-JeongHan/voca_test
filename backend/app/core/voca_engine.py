@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 """
 C++ Engine Wrapper with Python Fallback
 
@@ -26,7 +27,7 @@ class VocaTestEngine:
             Normalized text
         """
         # Remove spaces and quotes, convert to lowercase
-        normalized = re.sub(r'[\s\'""]', '', text)
+        normalized = re.sub(r'[\s\'""]', "", text)
         return normalized.lower()
 
     def is_correct(self, answer: str, correct: str) -> bool:
@@ -44,7 +45,7 @@ class VocaTestEngine:
         norm_answer = self.normalize(answer)
 
         # Split by comma for multiple correct answers
-        meanings = [m.strip() for m in correct.split(',')]
+        meanings = [m.strip() for m in correct.split(",")]
 
         # Check if any normalized meaning matches the normalized answer
         for meaning in meanings:
@@ -77,11 +78,42 @@ class VocaRepository:
 
 
 # Try to import pybind11 bindings, fall back to Python implementation
+_USING_CPP = False
+
 try:
-    from . import voca_engine as cpp_engine
-    VocaTestEngine = cpp_engine.VocaTestEngine
-    VocaRepository = cpp_engine.VocaRepository
+    from . import voca_cpp
+
+    # Override with C++ implementations
+    CppVocaTestEngine = voca_cpp.VocaTestEngine
+    CppVocaSession = voca_cpp.VocaSession
+    CppVocaResult = voca_cpp.VocaResult
+    CppWrongVoca = voca_cpp.WrongVoca
+
+    _USING_CPP = True
     print("Using C++ engine via pybind11")
 except ImportError:
     print("pybind11 bindings not available, using Python fallback")
-    # Use the classes defined above
+    CppVocaTestEngine = None
+    CppVocaSession = None
+    CppVocaResult = None
+    CppWrongVoca = None
+
+
+def is_using_cpp() -> bool:
+    """Check if C++ engine is being used."""
+    return _USING_CPP
+
+
+def get_engine():
+    """Get the appropriate engine class (C++ or Python fallback)."""
+    if _USING_CPP:
+        return CppVocaTestEngine()
+    return VocaTestEngine()
+
+
+def get_session():
+    """Get the appropriate session class (C++ or Python fallback)."""
+    if _USING_CPP:
+        return CppVocaSession()
+    # Python fallback would need a VocaSession implementation
+    raise NotImplementedError("Python VocaSession fallback not implemented")

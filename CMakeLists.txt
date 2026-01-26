@@ -25,9 +25,17 @@ set(VOCA_FULL_SOURCES
     ${CMAKE_CURRENT_SOURCE_DIR}/src/voca_saver.cpp
 )
 
+# Python bindings option (must be before voca_core for -fPIC)
+option(BUILD_PYTHON "Build Python bindings" OFF)
+
 # voca_core: standalone session API library (for WASM/mobile)
 add_library(voca_core STATIC ${VOCA_CORE_SOURCES})
 target_include_directories(voca_core PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+# Enable -fPIC for voca_core when building Python bindings
+if(BUILD_PYTHON)
+    set_target_properties(voca_core PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
 
 # WASM build configuration
 if(EMSCRIPTEN)
@@ -105,3 +113,31 @@ install(
 install(DIRECTORY ./words
     DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/install
 )
+
+# Python bindings (pybind11)
+if(BUILD_PYTHON)
+    find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+    find_package(pybind11 CONFIG QUIET)
+
+    if(NOT pybind11_FOUND)
+        # Fallback: fetch pybind11 if not installed
+        include(FetchContent)
+        FetchContent_Declare(
+            pybind11
+            GIT_REPOSITORY https://github.com/pybind/pybind11.git
+            GIT_TAG v2.11.1
+        )
+        FetchContent_MakeAvailable(pybind11)
+    endif()
+
+    pybind11_add_module(voca_cpp
+        ${CMAKE_CURRENT_SOURCE_DIR}/src/python_bindings.cpp
+    )
+    target_link_libraries(voca_cpp PRIVATE voca_core)
+    target_include_directories(voca_cpp PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/include)
+
+    # Install to backend/app/core/ for Python import
+    install(TARGETS voca_cpp
+        LIBRARY DESTINATION ${CMAKE_CURRENT_SOURCE_DIR}/backend/app/core
+    )
+endif()
