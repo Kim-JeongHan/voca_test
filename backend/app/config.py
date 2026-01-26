@@ -10,13 +10,6 @@ class Settings(BaseSettings):
 
     # API Keys
     elevenlabs_api_key: Optional[str] = None
-    huggingface_api_key: Optional[str] = None
-    github_token: Optional[str] = None
-
-    # GitHub Config
-    github_owner: str = ""
-    github_repo: str = ""
-    github_branch: str = "master"
 
     # CORS (comma-separated in .env, stored as string)
     cors_origins_str: str = "http://localhost:3000,http://127.0.0.1:3000"
