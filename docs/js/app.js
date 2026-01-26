@@ -26,6 +26,23 @@ const VocaApp = (() => {
         bindEvents();
         await initStorage();
         await loadWasm();
+
+        // Check auth state
+        await VocaAuth.init();
+        if (VocaAuth.isLoggedIn()) {
+            updateAuthUI();
+            showScreen('home');
+        } else {
+            // Show login screen for first-time users
+            // Or show home for anonymous users who skipped login
+            const skipLogin = localStorage.getItem('voca_skip_login');
+            if (skipLogin) {
+                showScreen('home');
+            } else {
+                showScreen('login');
+            }
+        }
+
         await loadDeck();
         updateUI();
     }
@@ -35,6 +52,36 @@ const VocaApp = (() => {
         elements.homeScreen = document.getElementById('home-screen');
         elements.sessionScreen = document.getElementById('session-screen');
         elements.summaryScreen = document.getElementById('summary-screen');
+        elements.loginScreen = document.getElementById('login-screen');
+        elements.registerScreen = document.getElementById('register-screen');
+        elements.resetScreen = document.getElementById('reset-screen');
+
+        // Auth elements
+        elements.loginForm = document.getElementById('login-form');
+        elements.loginUsername = document.getElementById('login-username');
+        elements.loginPassword = document.getElementById('login-password');
+        elements.loginError = document.getElementById('login-error');
+        elements.showRegisterBtn = document.getElementById('show-register-btn');
+        elements.showResetBtn = document.getElementById('show-reset-btn');
+        elements.skipLoginBtn = document.getElementById('skip-login-btn');
+
+        elements.registerForm = document.getElementById('register-form');
+        elements.registerUsername = document.getElementById('register-username');
+        elements.registerEmail = document.getElementById('register-email');
+        elements.registerPassword = document.getElementById('register-password');
+        elements.registerConfirm = document.getElementById('register-confirm');
+        elements.registerError = document.getElementById('register-error');
+        elements.registerBackBtn = document.getElementById('register-back-btn');
+
+        elements.resetForm = document.getElementById('reset-form');
+        elements.resetEmail = document.getElementById('reset-email');
+        elements.resetError = document.getElementById('reset-error');
+        elements.resetSuccess = document.getElementById('reset-success');
+        elements.resetBackBtn = document.getElementById('reset-back-btn');
+
+        elements.userName = document.getElementById('user-name');
+        elements.logoutBtn = document.getElementById('logout-btn');
+        elements.loginBtn = document.getElementById('login-btn');
 
         // Home screen
         elements.deckName = document.getElementById('deck-name');
@@ -78,6 +125,38 @@ const VocaApp = (() => {
     }
 
     function bindEvents() {
+        // Auth events
+        if (elements.loginForm) {
+            elements.loginForm.addEventListener('submit', handleLogin);
+        }
+        if (elements.showRegisterBtn) {
+            elements.showRegisterBtn.addEventListener('click', () => showScreen('register'));
+        }
+        if (elements.showResetBtn) {
+            elements.showResetBtn.addEventListener('click', () => showScreen('reset'));
+        }
+        if (elements.skipLoginBtn) {
+            elements.skipLoginBtn.addEventListener('click', handleSkipLogin);
+        }
+        if (elements.registerForm) {
+            elements.registerForm.addEventListener('submit', handleRegister);
+        }
+        if (elements.registerBackBtn) {
+            elements.registerBackBtn.addEventListener('click', () => showScreen('login'));
+        }
+        if (elements.resetForm) {
+            elements.resetForm.addEventListener('submit', handlePasswordReset);
+        }
+        if (elements.resetBackBtn) {
+            elements.resetBackBtn.addEventListener('click', () => showScreen('login'));
+        }
+        if (elements.logoutBtn) {
+            elements.logoutBtn.addEventListener('click', handleLogout);
+        }
+        if (elements.loginBtn) {
+            elements.loginBtn.addEventListener('click', () => showScreen('login'));
+        }
+
         // Home screen
         elements.deckSelect.addEventListener('change', handleDeckSelect);
         elements.importBtn.addEventListener('click', () => elements.fileInput.click());
@@ -755,12 +834,138 @@ const VocaApp = (() => {
         updateUI();
     }
 
+    // Auth handlers
+    async function handleLogin(e) {
+        e.preventDefault();
+        const username = elements.loginUsername.value.trim();
+        const password = elements.loginPassword.value;
+
+        if (!username || !password) return;
+
+        elements.loginError.classList.add('hidden');
+
+        const result = await VocaAuth.login(username, password);
+        if (result.success) {
+            updateAuthUI();
+            showScreen('home');
+            await loadDeck();
+            updateUI();
+        } else {
+            elements.loginError.textContent = result.error;
+            elements.loginError.classList.remove('hidden');
+        }
+    }
+
+    async function handleRegister(e) {
+        e.preventDefault();
+        const username = elements.registerUsername.value.trim();
+        const email = elements.registerEmail.value.trim() || null;
+        const password = elements.registerPassword.value;
+        const confirm = elements.registerConfirm.value;
+
+        if (!username || !password) return;
+
+        if (password !== confirm) {
+            elements.registerError.textContent = 'Passwords do not match';
+            elements.registerError.classList.remove('hidden');
+            return;
+        }
+
+        elements.registerError.classList.add('hidden');
+
+        const result = await VocaAuth.register(username, email, password);
+        if (result.success) {
+            // Auto-login after registration
+            const loginResult = await VocaAuth.login(username, password);
+            if (loginResult.success) {
+                updateAuthUI();
+                showScreen('home');
+                await loadDeck();
+                updateUI();
+            } else {
+                showScreen('login');
+            }
+        } else {
+            elements.registerError.textContent = result.error;
+            elements.registerError.classList.remove('hidden');
+        }
+    }
+
+    async function handlePasswordReset(e) {
+        e.preventDefault();
+        const email = elements.resetEmail.value.trim();
+
+        if (!email) return;
+
+        elements.resetError.classList.add('hidden');
+        elements.resetSuccess.classList.add('hidden');
+
+        const result = await VocaAuth.requestPasswordReset(email);
+        if (result.success) {
+            elements.resetSuccess.textContent = result.message;
+            elements.resetSuccess.classList.remove('hidden');
+        } else {
+            elements.resetError.textContent = result.error;
+            elements.resetError.classList.remove('hidden');
+        }
+    }
+
+    async function handleLogout() {
+        await VocaAuth.logout();
+        updateAuthUI();
+        // Clear skip login flag on explicit logout
+        localStorage.removeItem('voca_skip_login');
+        showScreen('login');
+    }
+
+    function handleSkipLogin() {
+        localStorage.setItem('voca_skip_login', 'true');
+        showScreen('home');
+    }
+
+    function updateAuthUI() {
+        const isLoggedIn = VocaAuth.isLoggedIn();
+        const user = VocaAuth.getUser();
+
+        if (isLoggedIn && user) {
+            if (elements.userName) {
+                elements.userName.textContent = user.username;
+                elements.userName.classList.remove('hidden');
+            }
+            if (elements.logoutBtn) {
+                elements.logoutBtn.classList.remove('hidden');
+            }
+            if (elements.loginBtn) {
+                elements.loginBtn.classList.add('hidden');
+            }
+        } else {
+            if (elements.userName) {
+                elements.userName.classList.add('hidden');
+            }
+            if (elements.logoutBtn) {
+                elements.logoutBtn.classList.add('hidden');
+            }
+            if (elements.loginBtn) {
+                elements.loginBtn.classList.remove('hidden');
+            }
+        }
+    }
+
     function showScreen(name) {
         document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
-        document.getElementById(`${name}-screen`).classList.add('active');
+        const screen = document.getElementById(`${name}-screen`);
+        if (screen) {
+            screen.classList.add('active');
+        }
 
         if (name === 'session') {
             elements.answerInput.focus();
+        } else if (name === 'login' && elements.loginUsername) {
+            elements.loginUsername.focus();
+        } else if (name === 'register' && elements.registerUsername) {
+            elements.registerUsername.focus();
+        } else if (name === 'home') {
+            updateAuthUI();
         }
     }
 

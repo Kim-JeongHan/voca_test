@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 from pydantic import BaseModel, Field
 from typing import Optional
 from datetime import datetime
@@ -35,6 +36,7 @@ class DeckResponse(DeckBase):
     id: int
     csv_path: Optional[str]
     user_id: Optional[int]
+    is_public: bool = False
     created_at: datetime
     updated_at: Optional[datetime]
     word_count: Optional[int] = Field(None, description="Number of words in deck")

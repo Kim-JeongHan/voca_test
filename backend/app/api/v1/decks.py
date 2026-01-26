@@ -5,28 +5,47 @@ Decks API Router
 
 import csv
 import io
+from typing import Optional
+
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from sqlalchemy.orm import Session
+from sqlalchemy import or_
 
 from app.database import get_db
 from app.schemas.deck import DeckCreate, DeckResponse, DeckWithWords, WordResponse
 from app.models.deck import Deck, Word
+from app.models.user import User
+from app.core.security import get_current_user, get_current_user_required
 
 router = APIRouter()
 
 
 @router.get("/decks", response_model=list[DeckResponse])
-async def list_decks(db: Session = Depends(get_db)):
+async def list_decks(
+    db: Session = Depends(get_db),
+    current_user: Optional[User] = Depends(get_current_user),
+):
     """
-    List all available decks.
+    List available decks.
+    - Public decks are always shown
+    - User's own private decks are shown if authenticated
     """
-    decks = db.query(Deck).all()
+    if current_user:
+        # Show public decks + user's own decks
+        decks = (
+            db.query(Deck)
+            .filter(or_(Deck.is_public == True, Deck.user_id == current_user.id))
+            .all()
+        )
+    else:
+        # Anonymous: only show public decks
+        decks = db.query(Deck).filter(Deck.is_public == True).all()
 
     # Add word count to each deck
     result = []
     for deck in decks:
         word_count = db.query(Word).filter(Word.deck_id == deck.id).count()
-        deck_dict = DeckResponse.from_orm(deck).model_dump()
+        deck_dict = DeckResponse.model_validate(deck).model_dump()
         deck_dict["word_count"] = word_count
         result.append(DeckResponse(**deck_dict))
 
@@ -51,9 +70,11 @@ async def upload_deck(
     name: str = Form(None),
     description: str = Form(None),
     db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
 ):
     """
     Upload a CSV file to create a new deck.
+    Requires authentication.
 
     CSV format: word,meaning
     Example:
@@ -84,9 +105,15 @@ async def upload_deck(
         if not words_data:
             raise HTTPException(status_code=400, detail="No valid words found in CSV")
 
-        # Create deck
+        # Create deck with user_id
         deck_name = name or file.filename.replace(".csv", "")
-        deck = Deck(name=deck_name, description=description, csv_path=file.filename)
+        deck = Deck(
+            name=deck_name,
+            description=description,
+            csv_path=file.filename,
+            user_id=current_user.id,
+            is_public=False,  # User-created decks are private by default
+        )
 
         db.add(deck)
         db.commit()
@@ -106,7 +133,7 @@ async def upload_deck(
         db.refresh(deck)
 
         # Return deck with word count
-        deck_dict = DeckResponse.from_orm(deck).model_dump()
+        deck_dict = DeckResponse.model_validate(deck).model_dump()
         deck_dict["word_count"] = len(words_data)
 
         return DeckResponse(**deck_dict)
@@ -121,13 +148,24 @@ async def upload_deck(
 
 
 @router.delete("/decks/{deck_id}")
-async def delete_deck(deck_id: int, db: Session = Depends(get_db)):
+async def delete_deck(
+    deck_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user_required),
+):
     """
     Delete a deck and all its words.
+    Users can only delete their own decks.
     """
     deck = db.query(Deck).filter(Deck.id == deck_id).first()
     if not deck:
         raise HTTPException(status_code=404, detail=f"Deck {deck_id} not found")
+
+    # Check ownership
+    if deck.user_id != current_user.id:
+        raise HTTPException(
+            status_code=403, detail="You can only delete your own decks"
+        )
 
     db.delete(deck)
     db.commit()

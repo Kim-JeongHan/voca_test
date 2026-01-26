@@ -162,21 +162,14 @@ DATABASE_URL=sqlite:///./voca.db
 # For PostgreSQL: postgresql://user:password@localhost/vocadb
 
 # API Keys
-ELEVENLABS_API_KEY=your_key_here
-HUGGINGFACE_API_KEY=your_key_here
-GITHUB_TOKEN=your_token_here
-
-# GitHub Config
-GITHUB_OWNER=your_username
-GITHUB_REPO=voca_test
-GITHUB_BRANCH=master
+ELEVENLABS_API_KEY=your_key_here  # Optional: for TTS pronunciation
 
 # CORS
-CORS_ORIGINS=http://localhost:3000,http://127.0.0.1:3000
+CORS_ORIGINS_STR=http://localhost:3000,http://127.0.0.1:3000
 
 # App
 APP_NAME=Voca Test API
-DEBUG=True
+DEBUG=True  # Set to False in production
 ```
 
 ## C++ Engine Integration

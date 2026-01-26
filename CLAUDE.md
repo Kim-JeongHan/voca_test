@@ -212,9 +212,7 @@ docker-compose up -d
 
 ```env
 DATABASE_URL=sqlite:///./voca.db
-ELEVENLABS_API_KEY=your_key
-HUGGINGFACE_API_KEY=your_key
-GITHUB_TOKEN=your_token
+ELEVENLABS_API_KEY=your_key  # Optional: TTS 발음용
 CORS_ORIGINS_STR=http://localhost:3000,http://127.0.0.1:3000
 ```
 

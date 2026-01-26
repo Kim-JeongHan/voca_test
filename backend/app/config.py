@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     app_name: str = "Voca Test API"
     debug: bool = True
 
+    # JWT Authentication
+    jwt_secret_key: str = "change-me-in-production-use-env-var"
+    jwt_algorithm: str = "HS256"
+    jwt_expire_hours: int = 24
+
     @cached_property
     def cors_origins(self) -> list[str]:
         """Parse comma-separated CORS origins into a list."""
