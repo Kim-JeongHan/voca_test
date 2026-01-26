@@ -11,7 +11,7 @@ const VocaTTS = (() => {
     // Configuration
     const CONFIG = {
         // Backend API URL for TTS
-        workerUrl: 'http://localhost:8000/api/v1/tts',
+        workerUrl: 'https://vocatest-production.up.railway.app/api/v1/tts',
         enabled: true,
         autoPlay: true,
     };
