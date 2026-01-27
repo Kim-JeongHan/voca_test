@@ -4,6 +4,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.database import engine, Base
 
+# Import all models before create_all so tables are registered
+from app.models import user, deck, session, image_cache  # noqa: F401
+
 # Create database tables
 Base.metadata.create_all(bind=engine)
 
