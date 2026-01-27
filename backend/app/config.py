@@ -12,7 +12,9 @@ class Settings(BaseSettings):
     elevenlabs_api_key: Optional[str] = None
 
     # CORS (comma-separated in .env, stored as string)
-    cors_origins_str: str = "http://localhost:3000,http://127.0.0.1:3000"
+    cors_origins_str: str = (
+        "https://kim-jeonghan.github.io,http://localhost:3000,http://127.0.0.1:3000"
+    )
 
     # App
     app_name: str = "Voca Test API"
