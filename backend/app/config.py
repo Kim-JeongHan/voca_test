@@ -5,8 +5,14 @@ from functools import cached_property
 
 
 class Settings(BaseSettings):
-    # Database
+    # Database (DATABASE_PUBLIC_URL takes priority for Railway external access)
+    database_public_url: Optional[str] = None
     database_url: str = "sqlite:///./voca.db"
+
+    @cached_property
+    def db_url(self) -> str:
+        """Use public URL if available (Railway), otherwise standard DATABASE_URL."""
+        return self.database_public_url or self.database_url
 
     # API Keys
     elevenlabs_api_key: Optional[str] = None
