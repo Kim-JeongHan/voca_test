@@ -10,6 +10,8 @@ connect_args = {}
 if database_url.startswith("sqlite"):
     connect_args = {"check_same_thread": False}
 elif database_url.startswith("postgresql"):
+    # Use psycopg3 driver for better SSL support
+    database_url = database_url.replace("postgresql://", "postgresql+psycopg://", 1)
     # Force SSL for Railway PostgreSQL
     if "sslmode" not in database_url:
         database_url = (
